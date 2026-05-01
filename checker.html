@@ -871,20 +871,49 @@ function parseKeywords(input) {
   return buildKeywordObjects(parts.map(raw => ({ raw, meta: {} })));
 }
 
-// Format 1: Tab-separated table with header row
-// "Search term\tTotal orders\nkw1\t123\n..."
+// Format 1: Tab-separated table, with or without a header row
+// "Search term\tTotal orders\nkw1\t123\n..." or "kw1\t123\nkw2\t456\n..."
 function parseKeywordsTable(input) {
   const lines = input.split('\n').map(l => l.trim()).filter(Boolean);
-  if (lines.length < 2) return [];
+  if (!lines.length) return [];
 
-  const headers = lines[0].split('\t').map(h => h.trim());
+  const firstCells = lines[0].split('\t').map(h => h.trim());
+
+  // Detect whether the first row is a header or data:
+  // — if any cell matches a known keyword alias → definitely a header
+  // — if the second cell is numeric → NOT a header (it's a data row with volume)
+  // — otherwise assume it's a header
+  const hasAlias = firstCells.some(c => KW_ALIASES.has(c.toLowerCase()));
+  let hasHeader;
+  if (hasAlias) {
+    hasHeader = true;
+  } else if (firstCells.length >= 2) {
+    const v = firstCells[1].replace(/[\s,]/g, '');
+    hasHeader = v === '' || isNaN(Number(v));
+  } else {
+    hasHeader = true;
+  }
+
+  let headers, startRow;
+  if (hasHeader) {
+    if (lines.length < 2) return [];
+    headers = firstCells;
+    startRow = 1;
+  } else {
+    // No header row — generate synthetic names and parse from row 0
+    headers = firstCells.map((_, i) => {
+      if (i === 0) return 'keyword';
+      if (i === 1) return 'Volume';
+      return `col${i}`;
+    });
+    startRow = 0;
+  }
 
   // Find keyword column
   let kwCol = -1;
   for (let i = 0; i < headers.length; i++) {
     if (KW_ALIASES.has(headers[i].toLowerCase())) { kwCol = i; break; }
   }
-  // Fallback: first column is keyword if no alias matched
   if (kwCol === -1) kwCol = 0;
 
   // Build meta columns from header (all non-keyword columns)
@@ -902,7 +931,7 @@ function parseKeywordsTable(input) {
 
   // Parse data rows
   const rows = [];
-  for (let r = 1; r < lines.length; r++) {
+  for (let r = startRow; r < lines.length; r++) {
     const cells = lines[r].split('\t').map(c => c.trim());
     const raw = cells[kwCol] ?? '';
     if (!raw) continue;
@@ -1121,7 +1150,7 @@ function findBroad(text,kw){
 }
 // Normalize for Full Exact: lowercase + dash/emdash→space + collapse spaces
 function normForFullExact(str) {
-  return str.toLowerCase().replace(/[\u2013\u2014]+/g,' ').replace(/\s+/g,' ').trim();
+  return str.toLowerCase().replace(/[\u2013\u2014\-]+/g,' ').replace(/\s+/g,' ').trim();
 }
 
 // Find all Full Exact spans by searching normalized kw as substring in normalized title.
@@ -1169,11 +1198,13 @@ function findFullExact(text, kw) {
   const tokens = buildTokenStream(text);
   const result = [];
   for (const span of spans) {
-    const toks = tokens.filter(t => t.origStart >= span.start && t.origEnd <= span.end);
+    // Use overlap (not strict containment) so tokens that straddle the span boundary
+    // (caused by normForFullExact vs normalizeWithMap differences) are still included.
+    const toks = tokens.filter(t => t.origStart < span.end && t.origEnd > span.start);
     if (toks.length) {
       toks.forEach(t => result.push({start: t.origStart, end: t.origEnd, type: 'fullexact'}));
     } else {
-      result.push(span); // fallback: single word with special chars
+      result.push(span); // fallback: span contains no recognizable tokens
     }
   }
   return result;
@@ -1234,6 +1265,17 @@ function mergeSpans(spans) {
       merged[merged.length-1].end=Math.max(merged[merged.length-1].end,s.end);
     }else{
       merged.push({...s});
+    }
+  }
+  // Step 3: snap any span boundary that falls mid-token to the token's edge.
+  // Defensive layer — prevents half-word coloring if any upstream span is not token-aligned.
+  if(_cachedTokenStream&&_cachedTokenStream.length){
+    const toks=_cachedTokenStream;
+    for(const s of merged){
+      const st=toks.find(t=>t.origStart<s.start&&t.origEnd>s.start);
+      if(st)s.start=st.origStart;
+      const et=toks.find(t=>t.origStart<s.end&&t.origEnd>s.end);
+      if(et)s.end=et.origEnd;
     }
   }
   return merged;
@@ -2376,14 +2418,28 @@ function _parseBatchFull(text) {
   const fmt = detectTextareaFormat(text);
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-  if (fmt === 'table' && lines.length >= 2) {
-    const hdrs = lines[0].split('\t').map(h => h.trim());
+  if (fmt === 'table' && lines.length >= 1) {
+    const firstCells = lines[0].split('\t').map(h => h.trim());
+    // Detect header: alias match → header; second cell numeric → data row (no header)
+    const hasAlias = firstCells.some(c => KW_ALIASES.has(c.toLowerCase()));
+    let hasHeader;
+    if (hasAlias) {
+      hasHeader = true;
+    } else if (firstCells.length >= 2) {
+      const v = firstCells[1].replace(/[\s,]/g, '');
+      hasHeader = v === '' || isNaN(Number(v));
+    } else {
+      hasHeader = true;
+    }
+    const hdrs = hasHeader ? firstCells : firstCells.map((_, i) => i === 0 ? 'keyword' : i === 1 ? 'Volume' : `col${i}`);
+    const startRow = hasHeader ? 1 : 0;
+    if (hasHeader && lines.length < 2) return { rows: [], metaHeaders: [] };
     let kwCol = 0;
     for (let i = 0; i < hdrs.length; i++) {
       if (KW_ALIASES.has(hdrs[i].toLowerCase())) { kwCol = i; break; }
     }
     const metaIdxs = hdrs.map((h, i) => ({ h, i })).filter(({ h, i }) => i !== kwCol && h);
-    const rows = lines.slice(1).map(l => {
+    const rows = lines.slice(startRow).map(l => {
       const cells = l.split('\t');
       const raw = (cells[kwCol] || '').trim();
       if (!raw) return null;
