@@ -1,5 +1,5 @@
 [[redirects]]
   from = "/api/*"
-  to = "https://ЗАМІНИТИ_НА_URL_RENDER/api/:splat"
+  to = "https://keyword-checker-7uvs.onrender.com/api/:splat"
   status = 200
   force = true
