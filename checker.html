@@ -128,6 +128,10 @@ body.theme-light .badge-exact{background:rgba(26,122,58,.1);color:#1a7a3a;border
   .clear-btn{flex:1;padding:4px 6px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2px;background:var(--surface3);border:1px solid var(--border2);border-radius:5px;color:var(--text2);cursor:pointer;transition:all .15s;text-transform:none;white-space:nowrap;}
   .clear-btn:hover{border-color:var(--notfound);color:var(--notfound);}
   .clear-btn.confirming{color:var(--notfound);border-color:var(--notfound);background:var(--notfound-bg);}
+  .clear-btn-reset{color:var(--notfound);border-color:color-mix(in srgb,var(--notfound) 35%,transparent);}
+  .clear-btn-reset:hover{background:var(--notfound-bg);}
+  body.theme-light .clear-btn-reset{color:var(--notfound);}
+
 
   /* Search */
   .kw-search{padding:4px 10px 4px;flex-shrink:0;position:relative;display:flex;align-items:center;}
@@ -516,6 +520,9 @@ body.theme-light .badge-exact{background:rgba(26,122,58,.1);color:#1a7a3a;border
     <div class="clear-row">
       <button class="clear-btn" onclick="requireConfirm(this, clearAllKeywords)" title="Remove all keywords and meta" data-i18n="clear_all">✕ Clear all</button>
       <button class="clear-btn" onclick="requireConfirm(this, clearMetaOnly)" title="Keep keywords, remove meta columns" data-i18n="clear_meta">⊘ Clear meta</button>
+    </div>
+    <div class="clear-row">
+      <button class="clear-btn clear-btn-reset" onclick="requireConfirm(this, clearEverything)" title="Clear keywords, title, bullets and description">⊗ Reset workspace</button>
     </div>
 
     <div class="kw-search">
@@ -1526,6 +1533,36 @@ function clearAllKeywords() {
   document.getElementById('import-stats').innerHTML = '';
   updateSortDropdown();
   runAnalysis();
+}
+
+function clearEverything() {
+  // Keywords
+  keywords = [];
+  metaColumns = [];
+  document.getElementById('kw-input').value = '';
+  document.getElementById('import-stats').classList.remove('visible');
+  document.getElementById('import-stats').innerHTML = '';
+  updateSortDropdown();
+  // Keyword filter
+  const ks = document.getElementById('kw-search');
+  if (ks) { ks.value = ''; kwFilter = ''; }
+  // Title / text
+  document.getElementById('text-input').value = '';
+  const oldTi = document.getElementById('old-text-input');
+  if (oldTi) oldTi.value = '';
+  // Bullets
+  bulletTexts = ['', '', '', '', ''];
+  for (let i = 0; i < 5; i++) {
+    const ta = document.getElementById('bullet-ta-' + i);
+    if (ta) { ta.value = ''; autoResizeTA(ta); }
+  }
+  // Description
+  descriptionText = '';
+  const dta = document.getElementById('desc-ta');
+  if (dta) { dta.value = ''; setTimeout(() => autoResizeTA(dta), 0); }
+  runAnalysis();
+  saveState();
+  showToast('Workspace cleared');
 }
 
 function clearMetaOnly() {
