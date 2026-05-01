@@ -525,8 +525,13 @@ body.theme-light .badge-exact{background:rgba(26,122,58,.1);color:#1a7a3a;border
       <button class="clear-btn clear-btn-reset" onclick="requireConfirm(this, clearEverything)" title="Clear keywords, title, bullets and description">⊗ Reset workspace</button>
     </div>
 
+    <!-- Hidden honeypot inputs: Chrome autofills these instead of kw-search -->
+    <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none;">
+      <input type="email" tabindex="-1" name="email" autocomplete="email">
+      <input type="password" tabindex="-1" name="password" autocomplete="current-password">
+    </div>
     <div class="kw-search">
-      <input type="search" id="kw-search" placeholder="🔍 Filter keywords..." oninput="filterKeywords()" autocomplete="new-password">
+      <input type="text" id="kw-search" placeholder="🔍 Filter keywords..." oninput="filterKeywords()" autocomplete="off">
       <button class="kw-search-clear" id="kw-search-clear" onclick="clearKwFilter()" title="Clear filter">✕</button>
     </div>
     <div class="status-filter" id="status-filter">
@@ -3103,9 +3108,7 @@ async function submitAuth() {
     setLoggedIn(res.user);
     closeAuthModal();
     await _afterLogin();
-    // Chrome autofills search/text inputs with credentials after login — clear it
-    const ks = document.getElementById('kw-search');
-    if (ks) { ks.value = ''; kwFilter = ''; }
+    setTimeout(_resetKwSearch, 150);
   } catch(e) {
     errEl.textContent = e.message;
     errEl.style.display = 'block';
@@ -3318,12 +3321,20 @@ function _escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function _resetKwSearch() {
+  const el = document.getElementById('kw-search');
+  if (el && el.value) { el.value = ''; kwFilter = ''; renderKeywordList(); }
+}
+
 function initApp() {
   // Phase 1: instant — restore local state so page is usable immediately
   setLoggedOut();
   loadState();
   renderBulletInputs(); // always show bullet inputs even with no saved state
   _initDescTextarea();  // wire up description textarea
+  // Clear any browser-autofilled value in the keyword filter (Chrome ignores autocomplete=off)
+  setTimeout(_resetKwSearch, 150);
+  setTimeout(_resetKwSearch, 600);
 
   // Phase 2: background — validate token & switch to logged-in mode if valid
   // Uses setTimeout(0) so it runs after the current call stack clears,
