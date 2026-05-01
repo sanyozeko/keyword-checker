@@ -3066,6 +3066,9 @@ async function submitAuth() {
     setLoggedIn(res.user);
     closeAuthModal();
     await _afterLogin();
+    // Chrome autofills search/text inputs with credentials after login — clear it
+    const ks = document.getElementById('kw-search');
+    if (ks) { ks.value = ''; kwFilter = ''; }
   } catch(e) {
     errEl.textContent = e.message;
     errEl.style.display = 'block';
