@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where python:*)",
+      "Bash(where python3:*)",
+      "Bash(where py:*)",
+      "Bash(python server.py)",
+      "Bash(curl -s http://localhost:5000/api/auth/me)",
+      "Bash(curl -s -X POST http://localhost:5000/api/auth/register -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\":\\\\\"test@test.com\\\\\",\\\\\"password\\\\\":\\\\\"test123\\\\\",\\\\\"display_name\\\\\":\\\\\"Test User\\\\\"}\")",
+      "Bash(curl -s -X POST http://localhost:5000/api/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\":\\\\\"test@test.com\\\\\",\\\\\"password\\\\\":\\\\\"test123\\\\\"}\")",
+      "Bash(curl -s -X POST http://localhost:5000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"test@test.com\",\"password\":\"test123\"}')",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(python -c \"import jwt; d=jwt.decode\\('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoidGVzdEB0ZXN0LmNvbSIsImV4cCI6MTc3Njc0ODMwOX0.iEc-yEEZzEuqai4N8Fh4cPL0pxlbl0QPtAKwc_cjeDY','kwchecker-jwt-secret-change-in-prod',algorithms=['HS256']\\); print\\(d\\)\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr :5000)",
+      "Bash(findstr LISTEN)",
+      "Bash(taskkill /F /PID 21872 /PID 12856 /PID 2200)",
+      "Bash(taskkill /F /PID 21872)",
+      "Bash(taskkill /F /PID 12856)",
+      "Bash(taskkill /F /PID 2200)",
+      "Bash(cmd /c \"taskkill /F /PID 21872\")",
+      "Bash(cmd /c \"taskkill /F /PID 12856\")",
+      "Bash(cmd /c \"taskkill /F /PID 2200\")",
+      "Bash(python -c \"import subprocess; [subprocess.run\\(['taskkill', '/F', '/PID', str\\(p\\)], shell=True\\) for p in [21872, 12856, 2200]]\")",
+      "Bash(curl -s http://localhost:5000/checker.html)"
+    ]
+  }
+}

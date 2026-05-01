@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overview — Keywords Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+<link rel="manifest" href="favicon_io/site.webmanifest">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0d14;--surface:#13131f;--surface2:#1a1a2e;--surface3:#20203a;
+  --border:#2a2a45;--border2:#353560;
+  --text:#e2e0ff;--text2:#8888b8;--text3:#4a4a70;
+  --accent:#6c63ff;--accent-hover:#8a83ff;
+  --fullexact:#00ff88;--exact:#7fff9f;--phrase:#7eb8ff;--broad:#ffd97e;--notfound:#ff7e9a;
+}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* NAV */
+.navbar{display:flex;align-items:center;padding:0 40px;height:58px;background:var(--surface);border-bottom:1px solid var(--border);gap:8px;position:sticky;top:0;z-index:100;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+.nav-logo img{height:36px;display:block;}
+.nav-logo-text{display:flex;flex-direction:column;line-height:1.15;}
+.nav-logo-text span{font-weight:800;font-size:13px;letter-spacing:.2px;color:var(--text);}
+.nav-sep{flex:1;}
+.nav-links{display:flex;align-items:center;gap:2px;}
+.nav-link{padding:5px 14px;border-radius:7px;font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;transition:color .15s,background .15s;white-space:nowrap;}
+.nav-link:hover{color:var(--text);background:var(--surface2);}
+.nav-link.active{color:var(--text);background:var(--surface3);border:1px solid var(--border2);}
+.nav-cta{padding:6px 18px;border-radius:7px;font-size:13px;font-weight:700;color:#fff;text-decoration:none;background:var(--accent);transition:background .15s;white-space:nowrap;margin-left:8px;}
+.nav-cta:hover{background:var(--accent-hover);}
+
+/* PAGE */
+.page{max-width:780px;margin:0 auto;width:100%;padding:64px 24px 80px;}
+.page-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+.page-title{font-size:clamp(28px,4vw,46px);font-weight:800;letter-spacing:-.5px;line-height:1.1;margin-bottom:16px;}
+.page-lead{font-size:17px;color:var(--text2);line-height:1.7;margin-bottom:56px;max-width:640px;}
+
+/* SECTIONS */
+.section{margin-bottom:56px;}
+.section-heading{font-size:20px;font-weight:800;margin-bottom:6px;letter-spacing:-.2px;}
+.section-sub{font-size:14px;color:var(--text3);margin-bottom:20px;}
+.prose{font-size:15px;color:var(--text2);line-height:1.75;}
+.prose strong{color:var(--text);font-weight:700;}
+.prose + .prose{margin-top:12px;}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:12px;margin-top:4px;}
+.step{display:flex;gap:16px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-body h4{font-size:15px;font-weight:700;margin-bottom:4px;}
+.step-body p{font-size:14px;color:var(--text2);line-height:1.6;}
+.step-body code{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:1px 6px;color:var(--text);}
+
+/* MATCH CARDS */
+.match-cards{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+.match-card{display:flex;align-items:flex-start;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;}
+.match-badge{font-size:11px;font-weight:700;letter-spacing:.7px;padding:3px 10px;border-radius:5px;white-space:nowrap;flex-shrink:0;text-transform:uppercase;border:1px solid transparent;margin-top:1px;}
+.match-card .body p{font-size:14px;color:var(--text2);line-height:1.6;margin-top:3px;}
+.match-card .body strong{color:var(--text);font-weight:700;}
+
+/* FEATURES LIST */
+.feature-list{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+.feature-item{display:flex;align-items:flex-start;gap:10px;font-size:14.5px;color:var(--text2);line-height:1.6;}
+.feature-item::before{content:"→";color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px;}
+.feature-item strong{color:var(--text);}
+
+/* CTA */
+.cta-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px;text-align:center;margin-top:56px;}
+.cta-box h3{font-size:22px;font-weight:800;margin-bottom:10px;}
+.cta-box p{font-size:14px;color:var(--text2);margin-bottom:24px;}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;background:var(--accent);text-decoration:none;transition:background .15s;}
+.btn-primary:hover{background:var(--accent-hover);}
+
+footer{background:var(--surface);border-top:1px solid var(--border);padding:20px 40px;text-align:center;font-size:12px;color:var(--text3);margin-top:auto;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-logo">
+    <img src="Keywords-checker.svg" alt="Keywords Checker">
+    <div class="nav-logo-text"><span>Keywords</span><span>Checker</span></div>
+  </a>
+  <div class="nav-sep"></div>
+  <div class="nav-links">
+    <a href="overview.html" class="nav-link active">Overview</a>
+    <a href="checker.html" class="nav-link">Checker</a>
+    <a href="about.html" class="nav-link">About</a>
+  </div>
+  <a href="checker.html" class="nav-cta">Open Checker →</a>
+</nav>
+
+<main class="page">
+
+  <div class="page-label">Overview</div>
+  <h1 class="page-title">What is Keywords Checker?</h1>
+  <p class="page-lead">Keywords Checker is a free browser-based tool for Amazon sellers. It analyzes how well your product listing title covers a set of target keywords — showing exact match types, missing words, and search volume coverage.</p>
+
+  <!-- HOW IT WORKS -->
+  <div class="section">
+    <h2 class="section-heading">How it works</h2>
+    <p class="section-sub">Three steps, instant results.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Add your keywords</h4>
+          <p>Paste keywords one per line, or import a <code>.xlsx</code> file from Amazon Brand Analytics, Helium 10, or any keyword research tool. Search volume is supported and used for coverage analysis.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Paste your listing title</h4>
+          <p>Type or paste your Amazon product title in the text input area. The analysis runs instantly as you type — no button to press.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Read the results</h4>
+          <p>Each keyword gets a color-coded status: Full Exact, Exact, Phrase, Broad, or Not Found. The preview panel highlights matched words directly in your title text.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATCH TYPES -->
+  <div class="section">
+    <h2 class="section-heading">Match types explained</h2>
+    <p class="section-sub">Keywords Checker uses four levels of matching, from strongest to weakest.</p>
+    <div class="match-cards">
+      <div class="match-card">
+        <span class="match-badge" style="background:rgba(0,255,136,.1);color:var(--fullexact);border-color:rgba(0,255,136,.3);">⭐ Full Exact</span>
+        <div class="body">
+          <p><strong>The keyword phrase appears verbatim in your title.</strong> Exact character-for-character match (case-insensitive). The strongest possible coverage signal.</p>
+        </div>
+      </div>
+      <div class="match-card">
+        <span class="match-badge" style="background:rgba(127,255,159,.1);color:var(--exact);border-color:rgba(127,255,159,.25);">Exact</span>
+        <div class="body">
+          <p><strong>All keyword words appear in sequence with lemmatization applied.</strong> Word forms are recognized: "mats" matches "mat", "crawling" matches "crawl", "babies" matches "baby".</p>
+        </div>
+      </div>
+      <div class="match-card">
+        <span class="match-badge" style="background:rgba(126,184,255,.1);color:var(--phrase);border-color:rgba(126,184,255,.25);">Phrase</span>
+        <div class="body">
+          <p><strong>All words appear in the correct order, but up to 2 other words may appear between them.</strong> The keyword's word order is preserved, but the phrase isn't contiguous.</p>
+        </div>
+      </div>
+      <div class="match-card">
+        <span class="match-badge" style="background:rgba(255,217,126,.1);color:var(--broad);border-color:rgba(255,217,126,.25);">Broad</span>
+        <div class="body">
+          <p><strong>All content words are present anywhere in the title, in any order.</strong> Common stop words (a, the, for, with…) are ignored. Weakest match but still counts as coverage.</p>
+        </div>
+      </div>
+      <div class="match-card">
+        <span class="match-badge" style="background:rgba(255,126,154,.08);color:var(--notfound);border-color:rgba(255,126,154,.2);">Not Found</span>
+        <div class="body">
+          <p><strong>The keyword has no coverage in the title.</strong> Important words from this keyword are listed in the Missing Words panel so you can address them.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY FEATURES -->
+  <div class="section">
+    <h2 class="section-heading">Key features</h2>
+    <p class="section-sub">Built for real Amazon listing work.</p>
+    <div class="feature-list">
+      <div class="feature-item"><span><strong>Search Volume Coverage panel</strong> — see what % of your total keyword search volume is covered by your title, broken down by match type.</span></div>
+      <div class="feature-item"><span><strong>Missing Words panel</strong> — click any missing word to copy it instantly. Know exactly what to add to your title.</span></div>
+      <div class="feature-item"><span><strong>Excel import (.xlsx)</strong> — paste directly from Helium 10, Amazon Brand Analytics, or any spreadsheet. Keyword column is auto-detected.</span></div>
+      <div class="feature-item"><span><strong>Export to Excel</strong> — download your full keyword analysis with match statuses and meta columns.</span></div>
+      <div class="feature-item"><span><strong>Filter & sort</strong> — filter keywords by match status, sort by volume, alphabetically, or by import order.</span></div>
+      <div class="feature-item"><span><strong>Duplicate detection</strong> — duplicate keywords in your list are flagged automatically.</span></div>
+      <div class="feature-item"><span><strong>Title Case button</strong> — convert your listing title to proper title case in one click.</span></div>
+      <div class="feature-item"><span><strong>Character counter</strong> — tracks your title length in real time, including selection count.</span></div>
+      <div class="feature-item"><span><strong>Dark & Light theme</strong> — switch between themes for comfortable use in any environment.</span></div>
+      <div class="feature-item"><span><strong>No server, no account</strong> — everything runs in your browser. Your data never leaves your device.</span></div>
+    </div>
+  </div>
+
+  <div class="cta-box">
+    <h3>Try it now — it's free</h3>
+    <p>No sign-up. No install. Just open and start checking.</p>
+    <a href="checker.html" class="btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Open Checker
+    </a>
+  </div>
+
+</main>
+
+<footer>© 2025 Keywords Checker. Built for Amazon sellers.</footer>
+
+</body>
+</html>

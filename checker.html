@@ -1,0 +1,3740 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyword Match Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+<link rel="manifest" href="favicon_io/site.webmanifest">
+<style>
+  :root {
+    --bg:#0d0d14;--surface:#13131f;--surface2:#1a1a2e;--surface3:#20203a;
+    --border:#2a2a45;--border2:#353560;--text:#e2e0ff;--text2:#8888b8;--text3:#4a4a70;
+    --fullexact:#00ff88;--fullexact-bg:rgba(0,255,136,.10);--fullexact-border:rgba(0,255,136,.32);--exact:#7fff9f;--exact-bg:rgba(127,255,159,.10);--exact-border:rgba(127,255,159,.28);
+    --phrase:#7eb8ff;--phrase-bg:rgba(126,184,255,.10);--phrase-border:rgba(126,184,255,.28);
+    --broad:#ffd97e;--broad-bg:rgba(255,217,126,.10);--broad-border:rgba(255,217,126,.28);
+    --notfound:#ff7e9a;--notfound-bg:rgba(255,126,154,.08);--notfound-border:rgba(255,126,154,.22);
+    --accent:#6c63ff;--accent-hover:#8a83ff;
+  }
+  body.theme-light {
+    --bg:#f4f6f9;--surface:#fff;--surface2:#f0f2f5;--surface3:#e8eaed;
+    --border:#dee2e6;--border2:#c8cdd4;--text:#1a1e2e;--text2:#4a5568;--text3:#9aa5b4;
+    --fullexact:#008844;--fullexact-bg:rgba(0,136,68,.08);--fullexact-border:rgba(0,136,68,.28);--exact:#1a7a3a;--exact-bg:rgba(26,122,58,.08);--exact-border:rgba(26,122,58,.25);
+    --phrase:#1565c0;--phrase-bg:rgba(21,101,192,.08);--phrase-border:rgba(21,101,192,.25);
+    --broad:#b45309;--broad-bg:rgba(180,83,9,.08);--broad-border:rgba(180,83,9,.25);
+    --notfound:#c0392b;--notfound-bg:rgba(192,57,43,.06);--notfound-border:rgba(192,57,43,.2);
+    --accent:#4361ee;--accent-hover:#3050dc;
+  }
+  body.theme-light .topbar{background:#343a40;border-bottom:1px solid #23272b;}
+  body.theme-light .topbar-logo{color:#d0d5e0;}
+  body.theme-light .topbar-logo svg{color:#7986ff;}
+  body.theme-light .left-col{background:#fff;border-right:1px solid var(--border);}
+  body.theme-light .kw-section{background:#fff;}
+  body.theme-light textarea,body.theme-light .kw-search input,body.theme-light .sort-select{background:#fff;color:var(--text);border-color:var(--border2);}
+  body.theme-light .kw-chip{background:#f8f9fa;border-color:var(--border);}
+  body.theme-light .kw-chip:hover{background:#eef0f8;}
+  body.theme-light .counter-bar{background:#fff;border-bottom-color:var(--border);}
+  body.theme-light .pane-label{background:#f8f9fa;}
+  body.theme-light .preview-pane{background:#fff;color:var(--text);}
+  body.theme-light .right-col{background:#f4f6f9;}
+  body.theme-light mark.hl-fullexact{background:rgba(0,136,68,.12);color:#008844;border-bottom-color:rgba(0,136,68,.5);}
+  body.theme-light mark.hl-exact{background:rgba(26,122,58,.12);color:#1a7a3a;border-bottom-color:rgba(26,122,58,.4);}
+  body.theme-light mark.hl-phrase{background:rgba(21,101,192,.1);color:#1565c0;border-bottom-color:rgba(21,101,192,.4);}
+  body.theme-light mark.hl-broad{background:rgba(180,83,9,.1);color:#b45309;border-bottom-color:rgba(180,83,9,.4);}
+  body.theme-light .badge-fullexact{background:rgba(0,136,68,.1);color:#008844;border-color:rgba(0,136,68,.28);}
+body.theme-light .badge-exact{background:rgba(26,122,58,.1);color:#1a7a3a;border-color:rgba(26,122,58,.25);}
+  body.theme-light .badge-phrase{background:rgba(21,101,192,.1);color:#1565c0;border-color:rgba(21,101,192,.25);}
+  body.theme-light .badge-broad{background:rgba(180,83,9,.1);color:#b45309;border-color:rgba(180,83,9,.25);}
+  body.theme-light .badge-notfound{background:rgba(192,57,43,.08);color:#c0392b;border-color:rgba(192,57,43,.2);}
+  body.theme-light .kw-word.found-fullexact{color:#008844;font-weight:700;}
+  body.theme-light .kw-word.found-exact{color:#1a7a3a;}body.theme-light .kw-word.found-phrase{color:#1565c0;}
+  body.theme-light .kw-word.found-broad{color:#b45309;}body.theme-light .kw-word.not-found{color:#c0392b;}
+  body.theme-light .kw-word.stop-word{color:var(--text3);}
+  body.theme-light .icon-btn{background:#f0f2f5;border-color:var(--border2);color:var(--text2);}
+  body.theme-light .icon-btn:hover{background:#e8eaed;border-color:var(--accent);color:var(--accent);}
+  body.theme-light .toolbar-btn{background:#f0f2f5;border-color:var(--border2);color:var(--text2);}
+  body.theme-light .missing-panel{background:#f8f9fa;border-bottom-color:var(--border);}
+  body.theme-light .missing-tag{background:rgba(192,57,43,.08);color:#c0392b;border-color:rgba(192,57,43,.2);}
+  body.theme-light .char-count{background:#f0f2f5;border-color:var(--border2);color:var(--text2);}
+  body.theme-light .char-count.counting{background:rgba(67,97,238,.08);border-color:var(--accent);color:var(--accent);}
+  body.theme-light .char-count.overlimit{color:#c0392b!important;border-color:rgba(192,57,43,.5)!important;background:rgba(192,57,43,.07)!important;}
+  body.theme-light .dup-tag{background:rgba(180,110,0,.1);color:#a06800;border-color:rgba(180,110,0,.4);}
+  body.theme-light .dup-tag:hover{background:rgba(180,110,0,.2);border-color:#a06800;}
+  body.theme-light .dup-label{color:#d97706;}
+  body.theme-light .kw-del{color:var(--text3);}body.theme-light .kw-del:hover{color:var(--notfound);}
+  body.theme-light .kw-chip.hovered{border-color:var(--accent);background:rgba(67,97,238,.06);}
+  body.theme-light .kw-empty,.body.theme-light .section-label{color:var(--text3);}
+  body.theme-light .counter-label{color:var(--text2);}
+  body.theme-light .kw-meta-val{color:var(--text2);}body.theme-light .kw-meta-label{color:var(--text3);}
+  body.theme-light .upload-btn{background:rgba(67,97,238,.08);border-color:rgba(67,97,238,.3);color:var(--accent);}
+  body.theme-light .upload-btn:hover{background:rgba(67,97,238,.14);border-color:var(--accent);}
+  body.theme-light .import-stats{color:var(--text3);}
+  body.theme-light .clear-btn{background:#f0f2f5;border-color:var(--border2);color:var(--text2);}
+  body.theme-light .clear-btn:hover{border-color:var(--notfound);color:var(--notfound);}
+
+  .theme-toggle{display:flex;align-items:center;gap:7px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:4px 12px 4px 8px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,.65);transition:all .2s;white-space:nowrap;flex-shrink:0;}
+  .theme-toggle:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.9);}
+  .theme-toggle-track{width:28px;height:16px;border-radius:8px;background:rgba(255,255,255,.15);position:relative;transition:background .2s;flex-shrink:0;}
+  .theme-toggle-thumb{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.7);position:absolute;top:2px;left:2px;transition:transform .2s,background .2s;}
+  body.theme-light .theme-toggle{border-color:rgba(0,0,0,.15);color:#4a5568;}
+  body.theme-light .theme-toggle:hover{border-color:var(--accent);color:var(--accent);}
+  body.theme-light .theme-toggle-track{background:var(--accent);}
+  body.theme-light .theme-toggle-thumb{background:#fff;transform:translateX(12px);}
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  .topbar{display:flex;align-items:center;padding:0 40px;height:58px;background:var(--surface);border-bottom:1px solid var(--border);gap:8px;flex-shrink:0;position:sticky;top:0;z-index:100;}
+  .topbar-logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+  .topbar-logo svg{color:var(--accent);}
+  .topbar-sep{flex:1;}
+  .nav-logo-text{display:flex;flex-direction:column;line-height:1.15;}
+  .nav-logo-text span{font-weight:800;font-size:13px;letter-spacing:.2px;color:var(--text);}
+  body.theme-light .nav-logo-text span{color:#1a1e2e;}
+  .main-layout{display:flex;flex:1;overflow:hidden;}
+
+  /* LEFT */
+  .left-col{width:650px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--bg);overflow:hidden;}
+  .section-label{font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;}
+
+  .kw-section{padding:14px 16px 12px;border-bottom:1px solid var(--border);}
+  .kw-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  textarea{font-family:'JetBrains Mono',monospace;font-size:15px;line-height:1.65;width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:10px 12px;resize:none;outline:none;transition:border-color .15s;}
+  textarea:focus{border-color:var(--accent);}
+  textarea::placeholder{color:var(--text3);}
+
+  /* Import row */
+  .kw-tools-row{display:flex;align-items:center;gap:6px;padding:6px 10px 2px;flex-shrink:0;}
+  .upload-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.2px;background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.3);border-radius:5px;color:var(--accent);cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+  .upload-btn:hover{background:rgba(108,99,255,.16);border-color:var(--accent);}
+  .upload-btn svg{flex-shrink:0;}
+  #xlsx-input{display:none;}
+
+  .sort-select{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;padding:4px 8px;outline:none;cursor:pointer;transition:border-color .15s;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238888b8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;}
+  .sort-select:focus{border-color:var(--accent);}
+
+  /* Import stats row */
+  .import-stats{padding:2px 10px 4px;font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6;flex-shrink:0;min-height:0;display:none;}
+  .import-stats.visible{display:block;}
+  .import-stats b{color:var(--text2);font-weight:600;}
+
+  /* Clear buttons row */
+  .clear-row{display:flex;gap:5px;padding:0 10px 6px;flex-shrink:0;}
+  .clear-btn{flex:1;padding:4px 6px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2px;background:var(--surface3);border:1px solid var(--border2);border-radius:5px;color:var(--text2);cursor:pointer;transition:all .15s;text-transform:none;white-space:nowrap;}
+  .clear-btn:hover{border-color:var(--notfound);color:var(--notfound);}
+  .clear-btn.confirming{color:var(--notfound);border-color:var(--notfound);background:var(--notfound-bg);}
+
+  /* Search */
+  .kw-search{padding:4px 10px 4px;flex-shrink:0;position:relative;display:flex;align-items:center;}
+  .kw-search input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13.8px;padding:5px 30px 5px 10px;outline:none;transition:border-color .15s;}
+  .kw-search input:focus{border-color:var(--accent);}
+  .kw-search input::placeholder{color:var(--text3);}
+  .kw-search-clear{position:absolute;right:18px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;line-height:1;padding:2px 4px;border-radius:3px;display:none;transition:color .12s;}
+  .kw-search-clear:hover{color:var(--notfound);}
+  .kw-search.has-value .kw-search-clear{display:block;}
+  .status-filter{display:flex;flex-wrap:wrap;gap:5px;padding:4px 10px 6px;flex-shrink:0;}
+  .sf-btn{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:.4px;cursor:pointer;border:1px solid transparent;background:var(--surface3);color:var(--text2);transition:all .15s;font-family:'Syne',sans-serif;white-space:nowrap;}
+  .sf-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;margin-right:5px;vertical-align:middle;position:relative;top:-1px;}
+  .sf-btn:hover{color:var(--text);border-color:var(--border2);}
+  .sf-btn.active{color:#fff;}
+  .sf-btn[data-s="fullexact"].active{background:var(--fullexact);border-color:var(--fullexact);color:#000;}
+  .sf-btn[data-s="exact"].active{background:var(--exact);border-color:var(--exact);color:#000;}
+  .sf-btn[data-s="phrase"].active{background:var(--phrase);border-color:var(--phrase);color:#000;}
+  .sf-btn[data-s="broad"].active{background:var(--broad);border-color:var(--broad);color:#000;}
+  .sf-btn[data-s="notfound"].active{background:var(--notfound);border-color:var(--notfound);}
+  body.theme-light .sf-btn{background:var(--surface2);color:var(--text2);}
+
+  .kw-list{flex:1;overflow-y:auto;padding:10px;}
+  .kw-list::-webkit-scrollbar{width:4px;}
+  .kw-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+  .kw-empty{color:var(--text3);font-size:14.4px;text-align:center;margin-top:24px;line-height:1.8;}
+
+  .kw-chip{display:flex;align-items:stretch;margin-bottom:4px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);overflow:hidden;transition:border-color .15s,background .15s;}
+  .kw-chip:hover{border-color:var(--border2);cursor:pointer;}
+  .kw-chip.hovered{border-color:var(--accent)!important;background:rgba(108,99,255,.08);}
+  .kw-chip:active{opacity:.8;}
+  .kw-bar{width:3px;flex-shrink:0;align-self:stretch;}
+  .kw-body{flex:1;padding:6px 8px;display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .kw-body-top{display:flex;align-items:center;gap:6px;}
+  .kw-words{flex:1;font-family:'JetBrains Mono',monospace;font-size:13.8px;line-height:1.5;display:flex;flex-wrap:wrap;gap:2px;min-width:0;}
+  .kw-word{border-radius:3px;padding:1px 3px;transition:all .15s;}
+  .kw-word.found-fullexact{color:var(--fullexact);background:var(--fullexact-bg);}
+  .kw-word.found-exact{color:var(--exact);background:var(--exact-bg);}
+  .kw-word.found-phrase{color:var(--phrase);background:var(--phrase-bg);}
+  .kw-word.found-broad{color:var(--broad);background:var(--broad-bg);}
+  .kw-word.not-found{color:var(--text3);background:transparent;}
+  .kw-word.stop-word{color:var(--text3);background:transparent;opacity:.45;}
+
+  /* Meta row */
+  .kw-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center;}
+  .kw-meta-item{display:flex;align-items:baseline;gap:2px;font-family:'JetBrains Mono',monospace;}
+  .kw-meta-label{font-size:10.6px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);}
+  .kw-meta-val{font-size:12.75px;font-weight:700;color:var(--text);}
+  .kw-meta-sep{width:1px;height:10px;background:var(--border2);margin:0 1px;}
+
+  .badge{font-size:10.8px;font-weight:700;letter-spacing:.7px;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;text-transform:uppercase;border:1px solid transparent;}
+  .badge-fullexact{background:var(--fullexact-bg);color:var(--fullexact);border-color:var(--fullexact-border);}
+  .badge-exact{background:var(--exact-bg);color:var(--exact);border-color:var(--exact-border);}
+  .badge-phrase{background:var(--phrase-bg);color:var(--phrase);border-color:var(--phrase-border);}
+  .badge-broad{background:var(--broad-bg);color:var(--broad);border-color:var(--broad-border);}
+  .badge-notfound{background:var(--notfound-bg);color:var(--notfound);border-color:var(--notfound-border);}
+
+  .kw-del{padding:0 9px;align-self:stretch;display:flex;align-items:center;cursor:pointer;color:var(--text3);font-size:15.6px;transition:color .12s;border:none;background:none;flex-shrink:0;}
+  .kw-del:hover{color:var(--notfound);}
+
+  /* Text toolbar */
+  .text-toolbar{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .char-count{font-family:'JetBrains Mono',monospace;font-size:16.9px;font-weight:700;white-space:nowrap;flex-shrink:0;color:var(--text3);background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:2px 10px;transition:all .15s;}
+  .char-count.counting{color:var(--text);border-color:var(--accent);background:rgba(108,99,255,.10);}
+  .char-count.overlimit{color:var(--notfound)!important;border-color:var(--notfound)!important;background:var(--notfound-bg)!important;animation:pulse-red 1.8s ease-in-out infinite;}
+  .char-count .sel{color:var(--phrase);}
+  @keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(255,126,154,.0);}50%{box-shadow:0 0 0 3px rgba(255,126,154,.28);}}
+  .toolbar-btn{padding:4px 10px;background:var(--surface3);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.2px;cursor:pointer;transition:all .15s;text-transform:none;white-space:nowrap;flex-shrink:0;}
+  .toolbar-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* Dup panel */
+  .dup-panel{display:none;flex-wrap:wrap;align-items:center;gap:4px;flex-shrink:0;}
+  .dup-tag{font-size:10.8px;font-weight:700;letter-spacing:.7px;padding:2px 6px;border-radius:4px;white-space:nowrap;text-transform:uppercase;border:1px solid rgba(255,186,0,.28);background:rgba(255,186,0,.10);color:#ffba00;cursor:pointer;transition:all .15s;font-family:'Syne',sans-serif;line-height:1.4;outline:none;-webkit-appearance:none;appearance:none;}
+  .dup-tag:hover{background:rgba(255,186,0,.20);border-color:rgba(255,186,0,.55);}
+  .dup-label{font-size:11px;color:#ffba00;font-weight:700;letter-spacing:.8px;text-transform:uppercase;align-self:center;white-space:nowrap;opacity:1!important;}
+
+  /* RIGHT */
+  .right-col{flex:1;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+  .counter-bar{display:flex;align-items:center;padding:0 16px;height:44px;background:var(--surface);border-bottom:1px solid var(--border);gap:16px;flex-shrink:0;}
+  .counter{display:flex;align-items:center;gap:6px;font-size:14.4px;}
+  .counter-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .counter-num{font-weight:700;font-size:16.8px;}
+  .counter-label{color:var(--text2);}
+  .counter-sep{flex:1;}
+  .icon-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:'Syne',sans-serif;font-size:13.2px;font-weight:600;letter-spacing:.4px;cursor:pointer;transition:all .15s;text-transform:uppercase;white-space:nowrap;}
+  .icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .icon-btn.active{border-color:var(--notfound);color:var(--notfound);background:var(--notfound-bg);}
+
+  .missing-panel{display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;flex-shrink:0;max-height:120px;overflow-y:auto;}
+  .missing-panel.open{display:block;}
+  .missing-panel-label{font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+  .missing-tags{display:flex;flex-wrap:wrap;gap:5px;}
+  .missing-tag{font-family:'JetBrains Mono',monospace;font-size:13.2px;font-weight:600;padding:3px 8px;border-radius:5px;background:var(--notfound-bg);color:var(--notfound);border:1px solid var(--notfound-border);cursor:pointer;transition:all .15s;user-select:all;}
+  .missing-tag:hover{background:rgba(255,126,154,.18);}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface3);border:1px solid var(--border2);color:var(--exact);font-family:'JetBrains Mono',monospace;font-size:14.4px;font-weight:600;padding:8px 18px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .18s ease,transform .18s ease;z-index:9999;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.4);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.error{color:var(--notfound);}
+
+  .panes{flex:0 0 auto;display:flex;flex-direction:column;}
+  .pane-col{display:contents;}
+  .pane{flex:0 0 auto;display:flex;flex-direction:column;padding:12px 14px 14px;gap:8px;min-height:140px;}
+  .pane+.pane{border-left:none;border-top:1px solid var(--border);}
+  .pane-label{font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;flex-shrink:0;display:flex;align-items:center;gap:8px;}
+  .pane-label > span{font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:12px;}
+  .pane textarea{resize:none;overflow:hidden;min-height:100px;}
+  .preview-pane{min-height:100px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;color:var(--text);white-space:pre-wrap;word-break:break-word;font-family:'JetBrains Mono',monospace;font-size:15px;line-height:1.75;}
+  .preview-pane::-webkit-scrollbar{width:4px;}
+  .preview-pane::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+  .preview-empty{color:var(--text3);font-style:italic;font-size:15px;}
+
+  mark.hl-fullexact{background:rgba(0,255,136,.15);color:var(--fullexact);border-radius:3px;padding:1px 0;font-weight:700;border-bottom:2px solid rgba(0,255,136,.6);}
+  mark.hl-exact{background:rgba(127,255,159,.15);color:var(--exact);border-radius:3px;padding:1px 0;font-weight:600;border-bottom:1.5px solid rgba(127,255,159,.5);}
+  mark.hl-phrase{background:rgba(126,184,255,.15);color:var(--phrase);border-radius:3px;padding:1px 0;font-weight:600;border-bottom:1.5px solid rgba(126,184,255,.5);}
+  mark.hl-broad{background:rgba(255,217,126,.15);color:var(--broad);border-radius:3px;padding:1px 0;font-weight:600;border-bottom:1.5px solid rgba(255,217,126,.5);}
+
+  /* ── KEYWORD GROUP — continuous underline for multi-word fullexact/exact ── */
+  .kw-group{display:inline;}
+  .kw-group-fullexact{border-bottom:2px solid rgba(0,255,136,.6);}
+  .kw-group-exact{border-bottom:1.5px solid rgba(127,255,159,.5);}
+  .kw-group-fullexact mark.hl-fullexact,.kw-group-exact mark.hl-exact{border-bottom:none;}
+  body.theme-light .kw-group-fullexact{border-bottom:2px solid rgba(0,136,68,.5);}
+  body.theme-light .kw-group-exact{border-bottom:1.5px solid rgba(26,122,58,.4);}
+
+  /* ── BATCH MODAL ── */
+  .batch-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);animation:bfadeIn .15s ease;}
+  @keyframes bfadeIn{from{opacity:0}to{opacity:1}}
+  .batch-modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:580px;max-height:78vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.55);overflow:hidden;animation:bslideUp .18s ease;}
+  @keyframes bslideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .batch-modal-head{display:flex;align-items:center;gap:8px;padding:14px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .batch-modal-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);flex-shrink:0;margin-right:2px;}
+  .batch-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+  .batch-badge.new{background:var(--exact-bg);color:var(--exact);border:1px solid var(--exact-border);}
+  .batch-badge.dup{background:var(--notfound-bg);color:var(--notfound);border:1px solid var(--notfound-border);}
+  .batch-modal-body{flex:1;overflow-y:auto;}
+  .batch-modal-body::-webkit-scrollbar{width:4px;}
+  .batch-modal-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+  .batch-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  .batch-th{padding:6px 14px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text);background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:1;}
+  .batch-th-kw{text-align:left;}
+  .batch-th-meta{text-align:right;border-left:1px solid var(--border);width:108px;}
+  .batch-td{padding:7px 14px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;vertical-align:middle;}
+  .batch-row:last-child .batch-td{border-bottom:none;}
+  .batch-td-kw{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .batch-td-meta{font-size:12px;color:var(--text2);text-align:right;border-left:1px solid var(--border);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .batch-row.is-dup{opacity:.4;}
+  .batch-row.is-dup .batch-td-kw{text-decoration:line-through;color:var(--text3);}
+  .batch-dup-badge{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--notfound);background:var(--notfound-bg);border:1px solid var(--notfound-border);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;}
+  body.theme-light .batch-th{background:#f8f9fa;}
+  body.theme-light .batch-th-meta{border-left-color:var(--border2);}
+  body.theme-light .batch-td-meta{border-left-color:var(--border2);}
+  .batch-modal-foot{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--border);flex-shrink:0;}
+  .batch-btn-add{flex:1;padding:8px 16px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;background:rgba(0,210,100,.10);border:1px solid rgba(0,210,100,.38);color:#00d264;border-radius:7px;cursor:pointer;transition:all .15s;}
+  .batch-btn-add:hover{background:rgba(0,210,100,.20);border-color:#00d264;}
+  .batch-btn-add:disabled{opacity:.35;cursor:not-allowed;}
+  .batch-btn-cancel{padding:8px 20px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.3);color:var(--notfound);border-radius:7px;cursor:pointer;transition:all .15s;}
+  .batch-btn-cancel:hover{background:rgba(255,80,80,.18);border-color:var(--notfound);}
+  body.theme-light .batch-modal{background:#fff;}
+  body.theme-light .batch-modal-cols{background:#f8f9fa;}
+  body.theme-light .batch-badge.new{background:rgba(26,122,58,.08);color:#1a7a3a;border-color:rgba(26,122,58,.25);}
+  body.theme-light .batch-badge.dup{background:rgba(192,57,43,.06);color:#c0392b;border-color:rgba(192,57,43,.2);}
+  body.theme-light .batch-btn-add{background:rgba(0,160,80,.08);border-color:rgba(0,160,80,.38);color:#008840;}
+  body.theme-light .batch-btn-add:hover{background:rgba(0,160,80,.18);border-color:#008840;}
+  body.theme-light .batch-btn-cancel{background:rgba(192,57,43,.06);border-color:rgba(192,57,43,.3);color:#c0392b;}
+  body.theme-light .batch-btn-cancel:hover{background:rgba(192,57,43,.14);border-color:#c0392b;}
+
+  /* ── PREVIEW MARK TOOLTIP ── */
+  .preview-pane mark { cursor: pointer; }
+
+  #kw-tooltip {
+    display: none;
+    position: fixed;
+    z-index: 9990;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 7px 11px;
+    pointer-events: none;
+    max-width: 340px;
+    min-width: 160px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.45);
+  }
+  #kw-tooltip.visible { display: block; }
+  .kw-tooltip-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text3);
+    margin-bottom: 5px; font-family: 'Syne', sans-serif;
+  }
+  .kw-tooltip-item {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600;
+    color: var(--text); line-height: 1.7;
+    white-space: nowrap;
+  }
+  .kw-tooltip-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  }
+  .kw-tooltip-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: .5px;
+    text-transform: uppercase; padding: 1px 5px; border-radius: 3px;
+    border: 1px solid transparent; margin-left: 6px; flex-shrink: 0;
+  }
+  body.theme-light #kw-tooltip {
+    background: #fff; border-color: var(--border2);
+    box-shadow: 0 4px 20px rgba(0,0,0,.15);
+  }
+
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+  /* ── SEARCH VOLUME COVERAGE PANEL ── */
+  .coverage-panel{display:none;flex-shrink:0;padding:10px 16px 11px;background:var(--surface);border-bottom:1px solid var(--border);gap:10px;flex-direction:column;}
+  .coverage-panel.visible{display:flex;}
+  .coverage-header{display:flex;align-items:center;gap:8px;}
+  .coverage-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);white-space:nowrap;}
+  .coverage-col-name{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;opacity:.7;}
+  .coverage-total-pct{font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-left:auto;}
+  .coverage-total-vol{font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);margin-left:8px;}
+  .coverage-bar{height:7px;border-radius:4px;background:var(--surface3);display:flex;overflow:hidden;gap:1px;}
+  .coverage-seg{height:100%;transition:width .35s ease;}
+  .coverage-seg.seg-exact{background:var(--exact);}
+  .coverage-seg.seg-phrase{background:var(--phrase);}
+  .coverage-seg.seg-broad{background:var(--broad);}
+  .coverage-seg.seg-notfound{background:var(--notfound);opacity:.35;}
+  .coverage-stats{display:flex;gap:14px;flex-wrap:wrap;}
+  .coverage-stat{display:flex;align-items:baseline;gap:4px;font-family:'JetBrains Mono',monospace;}
+  .coverage-stat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-bottom:1px;}
+  .coverage-stat-pct{font-size:13px;font-weight:700;}
+  .coverage-stat-label{font-size:13px;color:var(--text2);font-weight:700;}
+
+  /* ── TOP NAV ── */
+  .topbar-logo{text-decoration:none;}
+  .topbar-nav{display:flex;align-items:center;gap:2px;margin-left:12px;}
+  .topbar-nav-link{padding:5px 12px;border-radius:7px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;transition:color .15s,background .15s;white-space:nowrap;}
+  .topbar-nav-link:hover{color:var(--text);background:var(--surface3);}
+  .topbar-nav-link.active{color:var(--text);background:var(--surface3);border:1px solid var(--border2);}
+  body.theme-light .topbar-nav-link{color:#4a5568;}
+  body.theme-light .topbar-nav-link:hover{color:#1a1e2e;background:#e8eaed;}
+  body.theme-light .topbar-nav-link.active{color:#1a1e2e;background:#e8eaed;border-color:#c8cdd4;}
+  .coverage-stat-vol{font-size:13px;font-weight:700;color:var(--text);}
+  body.theme-light .coverage-panel{background:#fff;border-bottom-color:var(--border);}
+  body.theme-light .coverage-bar{background:#e8eaed;}
+
+  /* ── MOBILE TITLE PREVIEW ── */
+  .mobile-preview-pane{min-height:60px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;color:var(--text);white-space:pre-wrap;word-break:break-word;font-family:'JetBrains Mono',monospace;font-size:15px;line-height:1.75;}
+  .mobile-fade{opacity:0.18;filter:blur(0.3px);}
+  .mobile-cutoff-line{display:inline-block;border-left:2px dashed var(--notfound);opacity:.5;height:1.4em;vertical-align:middle;margin:0 2px;}
+  .mobile-warn{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+  .mobile-warn-chip{font-size:10px;font-weight:700;letter-spacing:.5px;font-family:'JetBrains Mono',monospace;padding:2px 7px;border-radius:4px;background:var(--notfound-bg);color:var(--notfound);border:1px solid var(--notfound-border);}
+  .mobile-ok-chip{font-size:10px;font-weight:700;letter-spacing:.5px;font-family:'JetBrains Mono',monospace;padding:2px 7px;border-radius:4px;background:var(--exact-bg);color:var(--exact);border:1px solid var(--exact-border);}
+  body.theme-light .mobile-preview-pane{background:#fff;color:var(--text);}
+
+  /* ── POLICY CHECKER PANEL ── */
+  .policy-panel{display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;flex-shrink:0;max-height:130px;overflow-y:auto;}
+  .policy-panel.open{display:block;}
+  .policy-panel-label{font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--notfound);text-transform:uppercase;margin-bottom:8px;}
+  .policy-chips{display:flex;flex-wrap:wrap;gap:5px;}
+  .policy-chip{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;padding:2px 8px;border-radius:5px;background:var(--notfound-bg);color:var(--notfound);border:1px solid var(--notfound-border);}
+  .policy-chip.warn{background:var(--broad-bg);color:var(--broad);border-color:var(--broad-border);}
+  body.theme-light .policy-panel{background:#fff8f8;border-bottom-color:var(--border);}
+
+  /* ── BULLET POINTS ANALYZER ── */
+  .bullets-section{flex-shrink:0;border-top:1px solid var(--border);}
+  .bullets-header{display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;user-select:none;background:var(--surface);}
+  .bullets-header:hover{background:var(--surface2);}
+  .bullets-header-title{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--text3);text-transform:uppercase;flex:1;}
+  .bullets-toggle{font-size:10px;color:var(--text3);transition:transform .2s;display:inline-block;}
+  .bullets-toggle.open{transform:rotate(180deg);}
+  .bullets-body{padding:10px 14px 14px;display:none;flex-direction:column;gap:8px;}
+  .bullets-body.open{display:flex;}
+  .bullet-row{display:flex;flex-direction:column;gap:4px;}
+  .bullet-ta{resize:none;overflow:hidden;min-height:38px;font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:6px 10px;outline:none;transition:border-color .15s;width:100%;box-sizing:border-box;}
+  .bullet-ta:focus{border-color:var(--accent);}
+  .bullet-row-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+  .bullet-num{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+  .bullet-chip{font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:1px 6px;border-radius:4px;border:1px solid;}
+  .bullet-chip.chars{background:var(--surface3);color:var(--text2);border-color:var(--border2);}
+  .bullet-chip.over{background:var(--notfound-bg);color:var(--notfound);border-color:var(--notfound-border);}
+  .bullet-chip.kw{background:var(--exact-bg);color:var(--exact);border-color:var(--exact-border);}
+  .bullet-chip.kw0{background:var(--surface3);color:var(--text3);border-color:var(--border);}
+  .bullets-agg-row{display:flex;flex-wrap:wrap;gap:5px;padding:8px 10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border);}
+  .bullets-agg-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);width:100%;margin-bottom:3px;font-family:'JetBrains Mono',monospace;}
+  body.theme-light .bullets-header{background:#fff;}
+  body.theme-light .bullets-header:hover{background:#f0f2f5;}
+  body.theme-light .bullet-ta{background:#fff;}
+  body.theme-light .bullets-agg-row{background:#f0f2f5;}
+
+  /* ── DESCRIPTION ANALYZER ── */
+  .desc-body{padding:10px 14px 14px;display:none;flex-direction:column;gap:8px;}
+  .desc-body.open{display:flex;}
+  .desc-ta{resize:none;overflow:hidden;min-height:80px;font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:8px 10px;outline:none;transition:border-color .15s;width:100%;box-sizing:border-box;}
+  .desc-ta:focus{border-color:var(--accent);}
+  .desc-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px;}
+  body.theme-light .desc-ta{background:#fff;}
+
+  /* ── KEYWORD CLUSTERS ── */
+  .clusters-section{flex-shrink:0;border-top:1px solid var(--border);}
+  .clusters-header{display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;user-select:none;background:var(--surface);}
+  .clusters-header:hover{background:var(--surface2);}
+  .clusters-header-title{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--text3);text-transform:uppercase;flex:1;}
+  .clusters-toggle{font-size:10px;color:var(--text3);transition:transform .2s;display:inline-block;}
+  .clusters-toggle.open{transform:rotate(180deg);}
+  .clusters-body{padding:10px 14px 14px;display:none;flex-direction:column;gap:6px;}
+  .clusters-body.open{display:flex;}
+  .cluster-group{display:flex;flex-direction:column;gap:5px;padding:7px 10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border);}
+  .cluster-head{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+  .cluster-stem-label{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--phrase);font-family:'JetBrains Mono',monospace;}
+  .cluster-count{font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:1px 5px;border-radius:3px;background:var(--phrase-bg);color:var(--phrase);border:1px solid var(--phrase-border);}
+  .cluster-kws{display:flex;flex-wrap:wrap;gap:4px;}
+  .cluster-kw{font-size:11px;font-family:'JetBrains Mono',monospace;padding:2px 7px;border-radius:4px;border:1px solid var(--border2);color:var(--text2);background:var(--surface);}
+  .cluster-kw.matched{color:var(--exact);background:var(--exact-bg);border-color:var(--exact-border);}
+  .cluster-kw.partial{color:var(--phrase);background:var(--phrase-bg);border-color:var(--phrase-border);}
+  .cluster-kw.notfound{color:var(--notfound);background:var(--notfound-bg);border-color:var(--notfound-border);}
+  .clusters-empty{font-size:12px;color:var(--text3);font-style:italic;font-family:'JetBrains Mono',monospace;padding:4px 0;}
+  body.theme-light .clusters-header{background:#fff;}
+  body.theme-light .clusters-header:hover{background:#f0f2f5;}
+  body.theme-light .cluster-group{background:#f4f6f9;}
+  body.theme-light .cluster-kw{background:#fff;}
+
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div id="kw-tooltip"></div>
+<input type="file" id="xlsx-input" accept=".xlsx,.xls" onchange="handleXlsxUpload(event)">
+
+<div class="topbar">
+  <a href="index.html" class="topbar-logo">
+    <img src="Keywords-checker.svg" alt="Keywords Checker" style="height:36px;display:block;flex-shrink:0;">
+    <div class="nav-logo-text"><span>Keywords</span><span>Checker</span></div>
+  </a>
+  <!-- Project bar (visible only when logged in) -->
+  <div id="project-bar" style="display:none;align-items:center;gap:6px;flex-shrink:0;">
+    <select id="project-select" class="sort-select" style="min-width:150px;max-width:220px;" onchange="onProjectSwitch()"></select>
+    <button class="icon-btn" onclick="showProjectModal('new')" title="New project">+ New</button>
+    <button class="icon-btn" onclick="showProjectModal('rename')" title="Rename project">Rename</button>
+    <button class="icon-btn" id="delete-project-btn" onclick="deleteCurrentProject()" title="Delete project">Delete</button>
+  </div>
+
+  <div class="topbar-sep"></div>
+
+  <!-- Auth bar -->
+  <div id="auth-logged-out" style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+    <button class="icon-btn" onclick="showAuthModal('login')">Log In</button>
+    <button class="icon-btn" onclick="showAuthModal('register')" style="background:rgba(108,99,255,.1);border-color:rgba(108,99,255,.4);color:var(--accent);">Register</button>
+  </div>
+  <div id="auth-logged-in" style="display:none;align-items:center;gap:8px;flex-shrink:0;">
+    <span id="auth-username" style="font-size:12px;color:var(--text2);font-family:'Syne',sans-serif;font-weight:600;white-space:nowrap;"></span>
+    <button class="icon-btn" onclick="logout()">Log Out</button>
+  </div>
+
+  <button class="theme-toggle" onclick="toggleTheme()" title="Switch theme">
+    <div class="theme-toggle-track"><div class="theme-toggle-thumb"></div></div>
+    <span id="theme-label" data-i18n="theme_light">Light</span>
+  </button>
+</div>
+
+<div class="main-layout">
+  <!-- LEFT -->
+  <div class="left-col">
+    <div class="kw-section">
+      <div class="kw-section-header">
+        <div class="section-label" style="margin-bottom:0" data-i18n="keywords">Keywords</div>
+      </div>
+      <textarea id="kw-input" rows="6" placeholder="One per line  ·  keyword | volume&#10;&#10;Or paste from Excel (with header row):&#10;Search term&#9;Total orders&#10;games for kids&#9;7628063"></textarea>
+    </div>
+
+    <!-- Import + Sort -->
+    <div class="kw-tools-row">
+      <button class="upload-btn" onclick="document.getElementById('xlsx-input').click()" title="Import keywords from Excel">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span data-i18n="import_xlsx">Import .xlsx</span>
+      </button>
+      <select class="sort-select" id="sort-select" onchange="renderKeywordList()" title="Sort keywords">
+        <option value="import" data-i18n="sort_import">Sort: Import order</option>
+        <option value="status" data-i18n="sort_status">Sort: Match status</option>
+        <option value="alpha" data-i18n="sort_alpha">Sort: Alphabetical</option>
+      </select>
+    </div>
+
+    <!-- Import stats -->
+    <div class="import-stats" id="import-stats"></div>
+
+    <!-- Clear buttons -->
+    <div class="clear-row">
+      <button class="clear-btn" onclick="requireConfirm(this, clearAllKeywords)" title="Remove all keywords and meta" data-i18n="clear_all">✕ Clear all</button>
+      <button class="clear-btn" onclick="requireConfirm(this, clearMetaOnly)" title="Keep keywords, remove meta columns" data-i18n="clear_meta">⊘ Clear meta</button>
+    </div>
+
+    <div class="kw-search">
+      <input type="text" id="kw-search" placeholder="🔍 Filter keywords..." oninput="filterKeywords()">
+      <button class="kw-search-clear" id="kw-search-clear" onclick="clearKwFilter()" title="Clear filter">✕</button>
+    </div>
+    <div class="status-filter" id="status-filter">
+      <button class="sf-btn" data-s="fullexact" onclick="toggleStatusFilter('fullexact')"><span class="sf-dot" style="background:var(--fullexact)"></span>⭐ Full Exact</button>
+      <button class="sf-btn" data-s="exact"     onclick="toggleStatusFilter('exact')"><span class="sf-dot" style="background:var(--exact)"></span>Exact</button>
+      <button class="sf-btn" data-s="phrase"    onclick="toggleStatusFilter('phrase')"><span class="sf-dot" style="background:var(--phrase)"></span>Phrase</button>
+      <button class="sf-btn" data-s="broad"     onclick="toggleStatusFilter('broad')"><span class="sf-dot" style="background:var(--broad)"></span>Broad</button>
+      <button class="sf-btn" data-s="notfound"  onclick="toggleStatusFilter('notfound')"><span class="sf-dot" style="background:var(--notfound)"></span>Not Found</button>
+    </div>
+
+    <div class="kw-list" id="kw-list">
+      <div class="kw-empty">No keywords yet.<br>Start typing keywords above.</div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+    <div class="counter-bar">
+      <div class="counter" onclick="toggleStatusFilter('fullexact')" title="Filter by Full Exact" style="cursor:pointer">
+        <div class="counter-dot" style="background:var(--fullexact)"></div>
+        <span class="counter-num" id="cnt-fullexact" style="color:var(--fullexact)">0</span>
+        <span class="counter-label" data-i18n="full_exact">&#11088; Full Exact</span>
+      </div>
+      <div class="counter" onclick="toggleStatusFilter('exact')" title="Filter by exact" style="cursor:pointer">
+        <div class="counter-dot" style="background:var(--exact)"></div>
+        <span class="counter-num" id="cnt-exact" style="color:var(--exact)">0</span>
+        <span class="counter-label" data-i18n="exact">Exact</span>
+      </div>
+      <div class="counter" onclick="toggleStatusFilter('phrase')" title="Filter by phrase" style="cursor:pointer">
+        <div class="counter-dot" style="background:var(--phrase)"></div>
+        <span class="counter-num" id="cnt-phrase" style="color:var(--phrase)">0</span>
+        <span class="counter-label" data-i18n="phrase">Phrase</span>
+      </div>
+      <div class="counter" onclick="toggleStatusFilter('broad')" title="Filter by broad" style="cursor:pointer">
+        <div class="counter-dot" style="background:var(--broad)"></div>
+        <span class="counter-num" id="cnt-broad" style="color:var(--broad)">0</span>
+        <span class="counter-label" data-i18n="broad">Broad</span>
+      </div>
+      <div class="counter" onclick="toggleStatusFilter('notfound')" title="Filter by notfound" style="cursor:pointer">
+        <div class="counter-dot" style="background:var(--notfound)"></div>
+        <span class="counter-num" id="cnt-notfound" style="color:var(--notfound)">0</span>
+        <span class="counter-label" data-i18n="not_found">Not Found</span>
+      </div>
+      <div class="counter-sep"></div>
+      <button class="icon-btn" id="missing-btn" onclick="toggleMissing()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span data-i18n="missing_words">Missing words</span>
+      </button>
+      <button class="icon-btn" onclick="exportToXlsx()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="export">Export</span>
+      </button>
+      <button class="icon-btn" id="demo-btn" onclick="loadDemo()">&#9654; Demo</button>
+      <button class="icon-btn" id="compare-btn" onclick="toggleCompare()">&#8644; Compare</button>
+    </div>
+
+    <!-- SEARCH VOLUME COVERAGE PANEL -->
+    <div class="coverage-panel" id="coverage-panel">
+      <div class="coverage-header">
+        <span class="coverage-title" data-i18n="coverage_title">Search Volume Coverage</span>
+        <span id="coverage-new-tag" style="display:none;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:1px 6px;border-radius:3px;background:rgba(108,99,255,.15);color:var(--accent);">NEW</span>
+        <span class="coverage-col-name" id="coverage-col-name"></span>
+        <span class="coverage-total-pct" id="coverage-total-pct"></span>
+        <span class="coverage-total-vol" id="coverage-total-vol"></span>
+      </div>
+      <div class="coverage-bar" id="coverage-bar"></div>
+      <div class="coverage-stats" id="coverage-stats"></div>
+      <div id="old-coverage-section" style="display:none;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">
+        <div class="coverage-header">
+          <span class="coverage-title" style="color:var(--broad);opacity:.85;">OLD</span>
+          <span class="coverage-total-pct" id="old-coverage-total-pct"></span>
+          <span class="coverage-total-vol" id="old-coverage-total-vol"></span>
+        </div>
+        <div class="coverage-bar" id="old-coverage-bar"></div>
+        <div class="coverage-stats" id="old-coverage-stats"></div>
+      </div>
+    </div>
+
+    <div class="missing-panel" id="missing-panel">
+      <div class="missing-panel-label"><span data-i18n="missing_from_title">Missing from title</span> <span id="missing-subtitle" style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--text3)"></span></div>
+      <div class="missing-tags" id="missing-tags"></div>
+    </div>
+
+    <div class="policy-panel" id="policy-panel">
+      <div class="policy-panel-label">&#9888; Policy Issues</div>
+      <div class="policy-chips" id="policy-chips"></div>
+    </div>
+
+    <div class="panes">
+      <div class="pane-col" id="pane-new-col">
+        <div class="pane">
+          <div class="pane-label" style="flex-direction:row;align-items:center;gap:8px;flex-wrap:nowrap;">
+            <span style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;white-space:nowrap;" data-i18n="text_input">Text Input</span>
+            <span class="char-count" id="char-count">0 chars</span>
+            <div style="flex:1"></div>
+            <button class="toolbar-btn" onclick="applyTitleCase()" data-i18n="title_case">Aa Title Case</button>
+            <button class="toolbar-btn" onclick="copyTitleText()" title="Copy title text">Copy</button>
+          </div>
+          <textarea id="text-input" placeholder="Paste or type your text here..."></textarea>
+        </div>
+        <div class="pane">
+          <div class="pane-label" style="flex-direction:row;align-items:center;gap:8px;">
+            <span style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;white-space:nowrap;" data-i18n="preview">Preview</span>
+            <span id="hl-count" style="color:var(--text3);font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;"></span>
+            <div class="dup-panel" id="dup-panel"></div>
+            <div style="flex:1"></div>
+            <button class="toolbar-btn" onclick="copyTitleText()" title="Copy title text">Copy</button>
+          </div>
+          <div class="preview-pane" id="preview">
+            <span class="preview-empty">Preview will appear here...</span>
+          </div>
+        </div>
+      </div>
+      <div class="pane-col pane-old-col" id="pane-old" style="display:none;">
+        <div class="pane">
+          <div class="pane-label" style="flex-direction:row;align-items:center;gap:8px;flex-wrap:nowrap;">
+            <span style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--broad);text-transform:uppercase;white-space:nowrap;">Old Title</span>
+            <span class="char-count" id="old-char-count">0 chars</span>
+            <div style="flex:1"></div>
+          </div>
+          <textarea id="old-text-input" placeholder="Paste old title here..."></textarea>
+        </div>
+        <div class="pane">
+          <div class="pane-label" style="flex-direction:row;align-items:center;gap:8px;">
+            <span style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--broad);text-transform:uppercase;white-space:nowrap;">Old Preview</span>
+            <span id="old-hl-count" style="color:var(--text3);font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;"></span>
+          </div>
+          <div class="preview-pane" id="old-preview">
+            <span class="preview-empty">Old preview will appear here...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE TITLE PREVIEW -->
+    <div class="bullets-section" id="mobile-preview-section">
+      <div class="bullets-header" onclick="toggleMobilePreview()">
+        <span class="bullets-header-title">&#9632; Mobile Title Preview</span>
+        <span id="mobile-char-info" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-right:6px;"></span>
+        <span class="bullets-toggle" id="mobile-preview-toggle-icon">&#9660;</span>
+      </div>
+      <div class="bullets-body" id="mobile-preview-body">
+        <div class="mobile-preview-pane" id="mobile-preview">
+          <span class="preview-empty">Mobile preview will appear here...</span>
+        </div>
+        <div class="mobile-warn" id="mobile-warn"></div>
+      </div>
+    </div>
+
+    <!-- BULLET POINTS ANALYZER -->
+    <div class="bullets-section" id="bullets-section">
+      <div class="bullets-header" onclick="toggleBulletsSection()">
+        <span class="bullets-header-title">&#9632; Bullet Points Analyzer</span>
+        <span id="bullets-agg-badge" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-right:6px;"></span>
+        <span class="bullets-toggle" id="bullets-toggle-icon">&#9660;</span>
+      </div>
+      <div class="bullets-body" id="bullets-body">
+        <div id="bullets-inputs"></div>
+        <div class="bullets-agg-row" id="bullets-agg" style="display:none;">
+          <span class="bullets-agg-label">Combined Coverage</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESCRIPTION ANALYZER -->
+    <div class="bullets-section" id="desc-section">
+      <div class="bullets-header" onclick="toggleDescSection()">
+        <span class="bullets-header-title">&#9632; Description</span>
+        <span id="desc-char-info" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-right:6px;"></span>
+        <span class="bullets-toggle" id="desc-toggle-icon">&#9660;</span>
+      </div>
+      <div class="desc-body" id="desc-body">
+        <div class="desc-meta" id="desc-meta"></div>
+        <textarea class="desc-ta" id="desc-ta" placeholder="Paste your Amazon product description here (max 2000 chars)..." rows="4"></textarea>
+        <div class="preview-pane" id="desc-preview" style="display:none;">
+          <span class="preview-empty">Description preview will appear here...</span>
+        </div>
+        <div class="policy-chips" id="desc-policy" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+      </div>
+    </div>
+
+    <!-- KEYWORD GROUPS -->
+    <div class="clusters-section" id="clusters-section">
+      <div class="clusters-header" onclick="toggleClustersSection()">
+        <span class="clusters-header-title">&#9632; Keyword Groups</span>
+        <span id="clusters-count-badge" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-right:6px;"></span>
+        <span class="clusters-toggle" id="clusters-toggle-icon">&#9660;</span>
+      </div>
+      <div class="clusters-body" id="clusters-body">
+        <span class="clusters-empty">Run analysis to see keyword groups.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// i18n — EN interface strings
+let uiLang = 'en';
+
+const I18N = {
+  en: {
+    keywords:'Keywords', import_xlsx:'Import .xlsx',
+    sort_import:'Sort: Import order', sort_status:'Sort: Match status', sort_alpha:'Sort: Alphabetical',
+    sort_meta_desc:function(h){return 'Sort: '+h+' \u2193';},
+    clear_all:'\u2715 Clear all', clear_meta:'\u2298 Clear meta',
+    filter_ph:'Filter keywords...', kw_empty:'No keywords yet.<br>Start typing keywords above.',
+    kw_no_match:function(f){return 'No keywords match<br>"'+f+'"';},
+    full_exact:'⭐ Full Exact', exact:'Exact', phrase:'Phrase', broad:'Broad', not_found:'Not Found',
+    missing_words:'Missing words', export:'Export',
+    coverage_title:'Search Volume Coverage', covered:function(p){return p+'% covered';},
+    missing_from_title:'Missing from title', text_input:'Text Input', preview:'Preview',
+    title_case:'Aa Title Case', theme_light:'Light', theme_dark:'Dark',
+    highlights:function(n){return '\xb7 '+n+' highlight'+(n!==1?'s':'');},
+    all_matched:'All keywords fully matched \u2713',
+    missing_n:function(n){return '\u2014 '+n+' word'+(n!==1?'s':'');},
+    select_first:'Select text first', title_case_done:'Title Case applied',
+    compare:'Compare',
+    demo_loaded:function(n){return '<b>Demo loaded: '+n+'</b> keywords';},
+    imported:function(n){return '<b>Imported: '+n+'</b> keywords';},
+    added_skipped:function(a,sk,e){return 'Added: '+a+' \xa0\xb7\xa0 Skipped: '+sk+' \xa0\xb7\xa0 Empty rows: '+e;},
+    toast_added:function(a,sk){return '\u2713 Added '+a+' \xb7 Skipped '+sk;},
+    copied:function(w){return '"'+w+'" copied';},
+    meta_cleared:'Meta cleared',
+    textarea_ph:'One per line  \xb7  keyword | volume\n\nOr paste from Excel (with header row):\nSearch term\tTotal orders\ngames for kids\t7628063',
+    text_placeholder:'Paste or type your text here...',
+  },
+
+};
+
+function t(key) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  var val = I18N[uiLang] && I18N[uiLang][key] !== undefined ? I18N[uiLang][key] : I18N.en[key];
+  if (val === undefined) return key;
+  return typeof val === 'function' ? val.apply(null, args) : val;
+}
+
+
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.dataset.i18n;
+    var src = I18N[uiLang];
+    if (src && src[key] !== undefined && typeof src[key] === 'string') el.textContent = src[key];
+  });
+  var sel = document.getElementById('sort-select');
+  var selVal = sel.value;
+  Array.from(sel.options).forEach(function(opt) {
+    var key = opt.dataset.i18n;
+    if (key) { var v = I18N[uiLang] && I18N[uiLang][key]; if (v && typeof v==='string') opt.textContent = v; }
+    if (opt.value.startsWith('meta:')) opt.textContent = t('sort_meta_desc', opt.value.slice(5));
+  });
+  sel.value = selVal;
+  var kwIn = document.getElementById('kw-input'); if (kwIn) kwIn.placeholder = t('textarea_ph');
+  var srch = document.getElementById('kw-search'); if (srch) srch.placeholder = t('filter_ph');
+  var txIn = document.getElementById('text-input'); if (txIn) txIn.placeholder = t('text_placeholder');
+  var thEl = document.getElementById('theme-label');
+  if (thEl) thEl.textContent = document.body.classList.contains('theme-light') ? t('theme_dark') : t('theme_light');
+  renderKeywordList();
+  if (missingOpen) renderMissing();
+}
+
+// ═══════════════════════════════════════════════════
+// STATE
+// keywords: { raw, status, wordStatuses, meta: { "Header Name": value, ... } }
+// metaColumns: [ { header, isPercent }, ... ] — dynamic, set on import, in header order
+// ═══════════════════════════════════════════════════
+let keywords = [];
+let metaColumns = [];   // [{ header: "Total Orders", isPercent: false }, ...]
+let kwDebounce = null, textDebounce = null;
+let missingOpen = false, kwFilter = '', statusFilter = null, hoveredKwIndex = -1, dupHoverStem = null;
+// ── PERFORMANCE CACHE ──────────────────────────────
+// Cached title analysis — rebuilt once per runAnalysis, reused by hover/mouseLeave
+let _cachedText = null;
+let _cachedTokenStream = null;
+let _cachedStemSet = null;
+let _cachedAllSpans = [];
+let _spanKwMap = new Map(); // Map<"start:end", {start,end,kws:[{raw,status}]}> — original spans before merge
+
+// ── COMPARE MODE STATE ─────────────────────────────
+let compareMode = false;
+let _oldCachedText = null;
+let _oldCachedTokenStream = null;
+let _oldCachedStemSet = null;
+let _oldCachedAllSpans = [];
+let _oldKwStatuses = []; // [{status, spans}] indexed same as keywords[]
+
+// ── AMAZON SEO STATE ───────────────────────────────
+let bulletTexts = ['', '', '', '', ''];
+let descriptionText = '';
+let bulletsOpen = false;
+let clustersOpen = false;
+let mobilePreviewOpen = false;
+let descOpen = false;
+
+// settings always on
+const CFG = { caseInsensitive: true, normalizeSpaces: true, ignorePunctuation: true };
+function getSettings() { return CFG; }
+
+// ── AMAZON SEO CONSTANTS ───────────────────────────
+const MOBILE_CUTOFF = 80;
+const BULLET_CHAR_LIMIT = 500;
+const FORBIDDEN_WORDS = {
+  promotional: ['best seller','bestseller','top seller','#1','number one','number 1','cheapest','on sale','lowest price','free shipping','money back','satisfaction guaranteed','limited time','special offer','today only','clearance','buy now','shop now'],
+  subjective:  ['amazing','incredible','outstanding','exceptional','best quality','high quality','premium quality','superior','perfect','flawless','fantastic','awesome','wonderful','superb','unbeatable'],
+  special_re:  /!{2,}|\*{2,}|\b[A-Z]{5,}\b/g,
+};
+
+// ═══════════════════════════════════════════════════
+// KEYWORD PARSER
+// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// TEXTAREA SMART PARSER
+// Detects 3 formats automatically:
+//   1. Tab-separated table with header row (paste from Excel)
+//   2. "keyword | value1 | value2" pipe format
+//   3. Plain keywords (one per line, or comma-separated single line)
+// ═══════════════════════════════════════════════════
+function detectTextareaFormat(input) {
+  const lines = input.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return 'plain';
+  // Tab-separated: first line has a tab → table format
+  if (lines[0].includes('\t')) return 'table';
+  // Pipe format: any line has ' | '
+  if (lines.some(l => l.includes(' | '))) return 'pipe';
+  return 'plain';
+}
+
+function parseKeywords(input) {
+  const fmt = detectTextareaFormat(input);
+
+  if (fmt === 'table') {
+    return parseKeywordsTable(input);
+  }
+  if (fmt === 'pipe') {
+    return parseKeywordsPipe(input);
+  }
+
+  // ── plain (original logic) ─────────────────────────────────────────────
+  const byLine = input.split('\n').map(l => l.trim()).filter(Boolean);
+  let parts;
+  if (uiLang === 'ja') {
+    parts = byLine.length ? byLine : [input.trim()].filter(Boolean);
+  } else {
+    parts = byLine.length === 1
+      ? input.split(',').map(p => p.trim()).filter(Boolean)
+      : byLine;
+  }
+  return buildKeywordObjects(parts.map(raw => ({ raw, meta: {} })));
+}
+
+// Format 1: Tab-separated table with header row
+// "Search term\tTotal orders\nkw1\t123\n..."
+function parseKeywordsTable(input) {
+  const lines = input.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split('\t').map(h => h.trim());
+
+  // Find keyword column
+  let kwCol = -1;
+  for (let i = 0; i < headers.length; i++) {
+    if (KW_ALIASES.has(headers[i].toLowerCase())) { kwCol = i; break; }
+  }
+  // Fallback: first column is keyword if no alias matched
+  if (kwCol === -1) kwCol = 0;
+
+  // Build meta columns from header (all non-keyword columns)
+  const newCols = [];
+  for (let i = 0; i < headers.length; i++) {
+    if (i === kwCol || !headers[i]) continue;
+    newCols.push({ header: headers[i], colIdx: i, isPercent: isPercentCol(headers[i]) });
+  }
+  // Merge into global metaColumns
+  for (const fc of newCols) {
+    if (!metaColumns.find(mc => mc.header === fc.header)) {
+      metaColumns.push({ header: fc.header, isPercent: fc.isPercent });
+    }
+  }
+
+  // Parse data rows
+  const rows = [];
+  for (let r = 1; r < lines.length; r++) {
+    const cells = lines[r].split('\t').map(c => c.trim());
+    const raw = cells[kwCol] ?? '';
+    if (!raw) continue;
+    const meta = {};
+    for (const fc of newCols) {
+      const cellRaw = cells[fc.colIdx] ?? '';
+      if (cellRaw === '') continue;
+      const parsed = parseCellValue(cellRaw, fc.isPercent);
+      if (parsed !== null) meta[fc.header] = parsed;
+    }
+    rows.push({ raw, meta });
+  }
+  return buildKeywordObjects(rows);
+}
+
+// Format 2: "keyword | vol1 | vol2"
+// First occurrence of | splits keyword from values.
+// Multiple | columns use position-based header names if no existing metaColumns.
+function parseKeywordsPipe(input) {
+  const lines = input.split('\n').map(l => l.trim()).filter(Boolean);
+
+  // Detect if first line is a header (all non-numeric cells)
+  let startRow = 0;
+  const firstCells = lines[0].split('|').map(s => s.trim());
+  const firstIsHeader = firstCells.length > 1 && isNaN(Number(firstCells[1].replace(/[,%]/g,'')));
+
+  let pipeHeaders = null;
+  if (firstIsHeader) {
+    pipeHeaders = firstCells; // [kwHeader, col1Header, col2Header, ...]
+    startRow = 1;
+    // kwHeader is first cell; rest are meta columns
+    const kwH = firstCells[0];
+    for (let i = 1; i < firstCells.length; i++) {
+      const h = firstCells[i];
+      if (!h) continue;
+      if (!metaColumns.find(mc => mc.header === h)) {
+        metaColumns.push({ header: h, isPercent: isPercentCol(h) });
+      }
+    }
+  }
+
+  const rows = [];
+  for (let r = startRow; r < lines.length; r++) {
+    const parts = lines[r].split('|').map(s => s.trim());
+    const raw = parts[0];
+    if (!raw) continue;
+    const meta = {};
+    for (let i = 1; i < parts.length; i++) {
+      if (!parts[i]) continue;
+      // Column name: from header if present, else from existing metaColumns by position, else generic
+      let colName;
+      if (pipeHeaders && pipeHeaders[i]) {
+        colName = pipeHeaders[i];
+      } else if (metaColumns[i - 1]) {
+        colName = metaColumns[i - 1].header;
+      } else {
+        colName = 'Value ' + i;
+        if (!metaColumns.find(mc => mc.header === colName)) {
+          metaColumns.push({ header: colName, isPercent: false });
+        }
+      }
+      const isP = isPercentCol(colName);
+      const parsed = parseCellValue(parts[i], isP);
+      if (parsed !== null) meta[colName] = parsed;
+    }
+    rows.push({ raw, meta });
+  }
+  return buildKeywordObjects(rows);
+}
+
+// Shared: dedup + importOrder + meta merge
+function buildKeywordObjects(rows) {
+  const seen = new Set();
+  const result = [];
+  const maxOrder = keywords.reduce((m, k) => Math.max(m, k.importOrder ?? 0), 0);
+  let nextOrder = maxOrder + 1;
+  // O(1) lookup map instead of O(n) find()
+  const existingMap = new Map(keywords.map(k => [k.raw.toLowerCase(), k]));
+  for (const { raw, meta } of rows) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    const norm = trimmed.toLowerCase();
+    if (seen.has(norm)) continue;
+    seen.add(norm);
+    const existing = existingMap.get(norm);
+    // Merge meta: existing fields win, new fields fill gaps
+    const mergedMeta = existing ? { ...meta, ...existing.meta } : { ...meta };
+    result.push({
+      raw: trimmed,
+      status: 'notfound',
+      wordStatuses: [],
+      meta: mergedMeta,
+      importOrder: existing ? existing.importOrder : nextOrder++,
+    });
+  }
+  return result;
+}
+
+
+
+// ═══════════════════════════════════════════════════
+// STOP WORDS
+// ═══════════════════════════════════════════════════
+const STOP_WORDS = new Set(['a','an','the','and','or','but','for','nor','so','yet','in','on','at','to','by','of','up','as','is','it','its','with','from','into','onto','over','via','per','than','that','this','these','those','be','are','was','were','not','no','do','did','has','had','have','can','may','will','would','could','should','shall','might']);
+function isStopWord(w) { return STOP_WORDS.has(w.toLowerCase()); }
+
+// ═══════════════════════════════════════════════════
+// LEMMATIZER
+// ═══════════════════════════════════════════════════
+const LEMMA_MAP = {};
+[['baby','babies'],['lady','ladies'],['city','cities'],['body','bodies'],['family','families'],['activity','activities'],['nursery','nurseries'],['story','stories'],['berry','berries'],['candy','candies'],['puppy','puppies'],['child','children'],['man','men'],['woman','women'],['foot','feet'],['tooth','teeth'],['mouse','mice'],['goose','geese'],['leaf','leaves'],['knife','knives'],['life','lives'],['wolf','wolves'],['shelf','shelves'],['crawl','crawling','crawled','crawler','crawlers'],['play','playing','played','player','players'],['fold','folding','folded','foldable'],['pad','padding','padded','pads'],['slide','sliding','slid'],['roll','rolling','rolled'],['grip','gripping','gripped'],['wash','washing','washed','washable'],['care','caring','cared'],['fit','fitting','fitted'],['use','using','used','usable'],['protect','protecting','protected','protection','protective'],['develop','developing','developed','development'],['mat','mats'],['rug','rugs'],['carpet','carpets'],['toddler','toddlers'],['infant','infants'],['baby','babies'],['kid','kids'],['child','children','childs'],['toy','toys'],['bag','bags'],['cover','covers'],['holder','holders'],['case','cases'],['soft','softer','softest','softness'],['thick','thicker','thickest','thickness'],['large','larger','largest'],['small','smaller','smallest'],['extra','extras'],['super','supers'],['non','non-slip','nonslip'],['slip','slipping','slipped','slips','non-slip','nonslip'],['plush','plusher'],['foam','foams'],['floor','floors'],['play','plays','playing','player'],['area','areas'],['room','rooms'],['nursery','nurseries'],['activity','activities']].forEach(g => { const r=g[0]; g.forEach(f => { LEMMA_MAP[f.toLowerCase()]=r; }); });
+
+function lemma(word) {
+  const w = word.toLowerCase().replace(/[^a-z0-9]/g,'');
+  if (!w) return w;
+  if (LEMMA_MAP[w]) return LEMMA_MAP[w];
+  if (w.length>3 && w.endsWith('s') && !w.endsWith('ss')) { const b=w.slice(0,-1); return LEMMA_MAP[b]||b; }
+  return w;
+}
+
+// ═══════════════════════════════════════════════════
+// NORMALIZE + POSITION MAP
+// ═══════════════════════════════════════════════════
+// Precompiled regex for normalizeWithMap (avoids per-char regex creation)
+const _RX_DASH=/[\u2013\u2014\-]/,_RX_WORD=/\w/,_RX_SPACE=/\s/;
+function normalizeWithMap(text) {
+  let norm=''; const normToOrig=[]; let prevWasSpace=false;
+  for (let i=0;i<text.length;i++) {
+    const c=text[i];
+    if (_RX_DASH.test(c)) { if(!prevWasSpace){norm+=' ';normToOrig.push(i);prevWasSpace=true;} }
+    else if (_RX_WORD.test(c)) { norm+=c.toLowerCase();normToOrig.push(i);prevWasSpace=false; }
+    else if (_RX_SPACE.test(c)) { if(!prevWasSpace){norm+=' ';normToOrig.push(i);prevWasSpace=true;} }
+    else { if(!prevWasSpace){norm+=' ';normToOrig.push(i);prevWasSpace=true;} }
+  }
+  let s=0; while(norm[s]===' ')s++;
+  return { norm:norm.slice(s).trimEnd(), normToOrig:normToOrig.slice(s) };
+}
+function normalizeText(t){return normalizeWithMap(t).norm;}
+function tokenize(t){return normalizeText(t).split(' ').filter(Boolean);}
+function splitWords(kw){const r=[],re=/[^\s,.\-–—!?;:()\[\]"'\/\\]+/g;let m;while((m=re.exec(kw))!==null)r.push(m[0]);return r;}
+function buildStemSet(text){
+  if (text === _cachedText && _cachedStemSet) return _cachedStemSet;
+  const s=new Set();for(const t of tokenize(text)){s.add(t);s.add(lemma(t));}return s;
+}
+function wordMatchesText(word,stemSet){const w=word.toLowerCase().replace(/[^a-z0-9]/g,'');return w&&(stemSet.has(w)||stemSet.has(lemma(w)));}
+
+// ═══════════════════════════════════════════════════
+// MATCH ENGINE
+// ═══════════════════════════════════════════════════
+function buildTokenStream(text) {
+  if (text === _cachedText && _cachedTokenStream) return _cachedTokenStream;
+  const {norm,normToOrig}=normalizeWithMap(text); const tokens=[]; const re=/\S+/g; let m;
+  while((m=re.exec(norm))!==null) tokens.push({word:m[0],lemma:lemma(m[0]),origStart:normToOrig[m.index],origEnd:normToOrig[m.index+m[0].length-1]+1});
+  return tokens;
+}
+function scanSequence(tokens,kwLemmas,type) {
+  const kl=kwLemmas.length; const spans=[];
+  for(let i=0;i<=tokens.length-kl;i++){let ok=true;for(let j=0;j<kl;j++)if(tokens[i+j].lemma!==kwLemmas[j]){ok=false;break;}if(ok)spans.push({start:tokens[i].origStart,end:tokens[i+kl-1].origEnd,type});}
+  return spans;
+}
+function findExact(text,kw){
+  const t=tokenize(kw);if(!t.length)return[];
+  const tokens=buildTokenStream(text);const kwLemmas=t.map(lemma);const kl=kwLemmas.length;const result=[];
+  for(let i=0;i<=tokens.length-kl;i++){
+    let ok=true;for(let j=0;j<kl;j++)if(tokens[i+j].lemma!==kwLemmas[j]){ok=false;break;}
+    if(ok){for(let j=0;j<kl;j++)result.push({start:tokens[i+j].origStart,end:tokens[i+j].origEnd,type:'exact'});}
+  }
+  return result;
+}
+// New PHRASE logic: all keyword lemmas appear in title in ORDER, but other words may appear between them.
+// Returns spans for each matched keyword word (not the gaps between them).
+// Maximum number of "foreign" words allowed between consecutive keyword words for Phrase match.
+const PHRASE_MAX_GAP = 2;
+
+function findPhrase(text, kw) {
+  const kwTokens = tokenize(kw);
+  if (kwTokens.length < 2) return [];
+  const kwLemmas = kwTokens.map(lemma);
+  const tokens = _cachedTokenStream || buildTokenStream(text);
+
+  for (let start = 0; start <= tokens.length - kwLemmas.length; start++) {
+    if (tokens[start].lemma !== kwLemmas[0]) continue;
+    const matchPositions = [start];
+    let cursor = start + 1;
+    let matched = true;
+    for (let k = 1; k < kwLemmas.length; k++) {
+      let found = false;
+      // Only look within MAX_GAP+1 positions from cursor
+      const searchLimit = cursor + PHRASE_MAX_GAP + 1;
+      for (let j = cursor; j <= Math.min(searchLimit, tokens.length - 1); j++) {
+        if (tokens[j].lemma === kwLemmas[k]) {
+          matchPositions.push(j);
+          cursor = j + 1;
+          found = true;
+          break;
+        }
+      }
+      if (!found) { matched = false; break; }
+    }
+    if (!matched) continue;
+    // Build spans: one span per matched kw token (gaps not highlighted)
+    return matchPositions.map(idx => ({
+      start: tokens[idx].origStart,
+      end:   tokens[idx].origEnd,
+      type:  'phrase'
+    }));
+  }
+  return [];
+}
+function findBroad(text,kw){
+  const ws=tokenize(kw).filter(w=>!isStopWord(w));if(!ws.length)return[];
+  const ss=buildStemSet(text);if(!ws.every(w=>wordMatchesText(w,ss)))return[];
+  const tokens=buildTokenStream(text);const seen=new Set();const spans=[];
+  for(const w of ws){const lm=lemma(w);if(seen.has(lm))continue;seen.add(lm);for(const t of tokens)if(t.lemma===lm)spans.push({start:t.origStart,end:t.origEnd,type:'broad'});}
+  return spans;
+}
+// Normalize for Full Exact: lowercase + dash/emdash→space + collapse spaces
+function normForFullExact(str) {
+  return str.toLowerCase().replace(/[\u2013\u2014]+/g,' ').replace(/\s+/g,' ').trim();
+}
+
+// Find all Full Exact spans by searching normalized kw as substring in normalized title.
+// Maps normalized positions back to original text positions.
+function findFullExact(text, kw) {
+  if (!text || !kw) return [];
+  const nTitle = normForFullExact(text);
+  const nKw    = normForFullExact(kw);
+  if (!nKw) return [];
+  const normToOrig = [];
+  let prevWasSpace = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const isDash = ch==='-'||ch==='–'||ch==='—';
+    if (isDash || /\s/.test(ch)) {
+      if (!prevWasSpace) { normToOrig.push(i); prevWasSpace = true; }
+    } else {
+      normToOrig.push(i); prevWasSpace = false;
+    }
+  }
+  let trimOffset = 0;
+  while (nTitle[trimOffset] === ' ') trimOffset++;
+  const tNormToOrig = normToOrig.slice(trimOffset);
+  const tTitle = nTitle.slice(trimOffset);
+  const isWordChar = (s,i) => i>=0 && i<s.length && /[a-z0-9]/i.test(s[i]);
+  const spans = [];
+  let pos = 0;
+  while (true) {
+    const found = tTitle.indexOf(nKw, pos);
+    if (found === -1) break;
+    const matchEnd = found + nKw.length;
+    const boundBefore = found===0 || !isWordChar(tTitle, found-1);
+    const boundAfter  = matchEnd>=tTitle.length || !isWordChar(tTitle, matchEnd);
+    if (boundBefore && boundAfter) {
+      const origStart = tNormToOrig[found];
+      const origEnd   = tNormToOrig[matchEnd - 1];
+      if (origStart !== undefined && origEnd !== undefined)
+        spans.push({ start: origStart, end: origEnd + 1, type: 'fullexact' });
+    }
+    pos = found + 1;
+  }
+  if (!spans.length) return [];
+  // Split whole-phrase spans into per-token spans so each word gets its own <mark>
+  // (same as Phrase/Broad) — needed for correct per-word tooltip behaviour
+  const tokens = buildTokenStream(text);
+  const result = [];
+  for (const span of spans) {
+    const toks = tokens.filter(t => t.origStart >= span.start && t.origEnd <= span.end);
+    if (toks.length) {
+      toks.forEach(t => result.push({start: t.origStart, end: t.origEnd, type: 'fullexact'}));
+    } else {
+      result.push(span); // fallback: single word with special chars
+    }
+  }
+  return result;
+}
+
+function checkKeyword(text,kw) {
+  // FULL EXACT — verbatim match (only lowercase + dash normalization, no lemmatization)
+  const fe=findFullExact(text,kw);
+  if(fe.length)return{status:'fullexact',spans:fe};
+  // EXACT — lemmatized (mats→mat, crawling→crawl, etc.)
+  const ex=findExact(text,kw);if(ex.length)return{status:'exact',spans:ex};
+  const all=tokenize(kw),cont=all.filter(w=>!isStopWord(w));
+  if(all.length>=2){const ph=findPhrase(text,kw);if(ph.length)return{status:'phrase',spans:ph};}
+  if(cont.length){const br=findBroad(text,kw);if(br.length)return{status:'broad',spans:br};}
+  return{status:'notfound',spans:[]};
+}
+function getWordStatuses(kw,text,status) {
+  const words=splitWords(kw);if(!words.length)return[];
+  if(status==='fullexact')return words.map(w=>({word:w,cls:'found-fullexact',isStop:false}));
+  if(status==='exact')return words.map(w=>({word:w,cls:'found-exact',isStop:false}));
+  if(status==='phrase')return words.map(w=>({word:w,cls:'found-phrase',isStop:false}));
+  const ss=_cachedStemSet||buildStemSet(text);
+  return words.map(w=>isStopWord(w.toLowerCase())?{word:w,cls:'stop-word',isStop:true}:{word:w,cls:wordMatchesText(w,ss)?'found-broad':'not-found',isStop:false});
+}
+function mergeSpans(spans) {
+  if(!spans.length)return[];
+  const p={fullexact:4,exact:3,phrase:2,broad:1,notfound:0};
+  // Sort by priority desc, then by start asc
+  const sorted=[...spans].sort((a,b)=>{const d=p[b.type]-p[a.type];return d||a.start-b.start;});
+
+  // Step 1: Clip each span against all higher-priority spans already placed.
+  // Partial overlaps are split into left/right fragments — no coverage is silently dropped.
+  // Example: fullexact[0,17] + exact[9,30] → fullexact[0,17] + exact[17,30]
+  const result=[], placed=[];
+  for(const s of sorted){
+    let frags=[{start:s.start,end:s.end,type:s.type}];
+    for(const h of placed){
+      if(!frags.length)break;
+      const next=[];
+      for(const f of frags){
+        if(h.e<=f.start||h.s>=f.end){next.push(f);continue;} // no overlap
+        if(f.start<h.s)next.push({start:f.start,end:h.s,type:f.type}); // left fragment
+        if(f.end>h.e)next.push({start:h.e,end:f.end,type:f.type});     // right fragment
+        // overlapping portion dropped — higher priority wins
+      }
+      frags=next;
+    }
+    for(const f of frags){
+      if(f.end>f.start){result.push(f);placed.push({s:f.start,e:f.end});}
+    }
+  }
+
+  // Step 2: sort by position and merge adjacent same-type spans
+  result.sort((a,b)=>a.start-b.start);
+  const merged=[];
+  for(const s of result){
+    if(merged.length&&merged[merged.length-1].type===s.type&&merged[merged.length-1].end>=s.start){
+      merged[merged.length-1].end=Math.max(merged[merged.length-1].end,s.end);
+    }else{
+      merged.push({...s});
+    }
+  }
+  return merged;
+}
+
+// ═══════════════════════════════════════════════════
+// CONVERSION FORMATTING — always as %
+// 12 → "12%", 12.5 → "12.5%", "12,5%" → "12.5%"
+// ═══════════════════════════════════════════════════
+function parseConversionValue(raw) {
+  // raw may be number or string
+  let s = String(raw).replace(/\s/g,'').replace(',','.');
+  const hasPct = s.includes('%');
+  s = s.replace('%','');
+  const n = parseFloat(s);
+  if (isNaN(n)) return null;
+  return n; // always store as-is (e.g. 12 or 12.5)
+}
+function formatPercent(n) {
+  if (n === null || n === undefined || isNaN(Number(n))) return null;
+  const v = Number(n);
+  return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + '%';
+}
+
+// ═══════════════════════════════════════════════════
+// DETECT if a column header is a percent type
+// ═══════════════════════════════════════════════════
+const PERCENT_KEYWORDS_RE = /conversion|conv\b|cvr|rate|%/i;
+function isPercentCol(header) { return PERCENT_KEYWORDS_RE.test(header); }
+
+// ═══════════════════════════════════════════════════
+// PARSE a cell value for a given column
+// ═══════════════════════════════════════════════════
+function parseCellValue(raw, isPercent) {
+  if (raw === '' || raw === null || raw === undefined) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  if (isPercent) {
+    return parseConversionValue(s);
+  }
+  // Try numeric: handle "1 234", "1,234" (thousands), "12.5"
+  const cleaned = s.replace(/\s/g,'').replace(/,(?=\d{3})/g,'');
+  const n = parseFloat(cleaned.replace(',','.'));
+  if (!isNaN(n) && String(n) !== 'NaN') return n;
+  return s; // string
+}
+
+// ═══════════════════════════════════════════════════
+// FORMAT a value for display in chip
+// ═══════════════════════════════════════════════════
+function formatDisplayValue(val, isPercent) {
+  if (val === null || val === undefined) return null;
+  if (isPercent) return formatPercent(val);
+  if (typeof val === 'number') return val.toLocaleString();
+  return String(val);
+}
+
+// ═══════════════════════════════════════════════════
+// FORMAT for export
+// ═══════════════════════════════════════════════════
+function formatExportValue(val, isPercent) {
+  if (val === null || val === undefined) return '';
+  if (isPercent) return formatPercent(val) || '';
+  return val;
+}
+
+// ═══════════════════════════════════════════════════
+// UPDATE SORT DROPDOWN based on metaColumns
+// ═══════════════════════════════════════════════════
+function updateSortDropdown() {
+  const sel = document.getElementById('sort-select');
+  const current = sel.value;
+  // Remove all dynamic options (those with value starting with 'meta:')
+  [...sel.options].filter(o => o.value.startsWith('meta:')).forEach(o => o.remove());
+  // Add dynamic options
+  metaColumns.forEach(col => {
+    const opt = document.createElement('option');
+    opt.value = 'meta:' + col.header;
+    opt.textContent = 'Sort: ' + col.header + ' ↓';
+    sel.appendChild(opt);
+  });
+  // Restore or reset selection
+  const vals = [...sel.options].map(o => o.value);
+  sel.value = vals.includes(current) ? current : 'import';
+}
+
+// ═══════════════════════════════════════════════════
+// MAIN ANALYSIS
+// ═══════════════════════════════════════════════════
+function runAnalysis() {
+  const text = document.getElementById('text-input').value;
+  if (text !== _cachedText) {
+    _cachedText = text;
+    _cachedTokenStream = null;
+    _cachedStemSet = null;
+  }
+  if (text) {
+    _cachedTokenStream = buildTokenStream(text);
+    _cachedStemSet = buildStemSet(text);
+  }
+  const allSpans = [];
+  // Build span→keywords map: array of {start,end,kws[]} for overlap lookup
+  _spanKwMap = new Map();
+  keywords = keywords.map(kw => {
+    const {status,spans} = checkKeyword(text, kw.raw);
+    spans.forEach(s => {
+      // For exact/fullexact the span covers the whole phrase — also register per-token spans
+      // so hover on a single word shows only relevant keywords
+      const spansToRegister = [s];
+      if ((status === 'exact' || status === 'fullexact') && _cachedTokenStream) {
+        // Find individual tokens within this span
+        for (const tok of _cachedTokenStream) {
+          if (tok.origStart >= s.start && tok.origEnd <= s.end &&
+              !(tok.origStart === s.start && tok.origEnd === s.end)) {
+            spansToRegister.push({ start: tok.origStart, end: tok.origEnd, type: s.type });
+          }
+        }
+      }
+      for (const sp of spansToRegister) {
+        const _smKey = sp.start + ':' + sp.end;
+        let entry = _spanKwMap.get(_smKey);
+        if (!entry) { entry = {start:sp.start, end:sp.end, kws:[]}; _spanKwMap.set(_smKey, entry); }
+        // Avoid duplicate kw entries
+        if (!entry.kws.find(k => k.raw===kw.raw && k.status===status)) {
+          entry.kws.push({ raw: kw.raw, status });
+        }
+      }
+    });
+    allSpans.push(...spans);
+    const wordStatuses = getWordStatuses(kw.raw, text, status);
+    return {...kw, status, wordStatuses};
+  });
+  _cachedAllSpans = mergeSpans(allSpans);
+  renderKeywordList();
+  renderPreview(text, _cachedAllSpans);
+  updateCounters();
+  checkDuplicates(text);
+  if (missingOpen) renderMissing();
+  if (compareMode) runOldAnalysis();
+  updateMobilePreview();
+  runPolicyCheck();
+  runBulletAnalysis();
+  updateDescAnalysis();
+  buildKwGroups();
+  saveState();
+}
+
+// ═══════════════════════════════════════════════════
+// SORT
+// ═══════════════════════════════════════════════════
+const STATUS_ORDER = {fullexact:-1,exact:0,phrase:1,broad:2,notfound:3};
+function getSortedKeywords() {
+  const sort = document.getElementById('sort-select').value;
+  const arr = [...keywords];
+  if (sort === 'import') {
+    arr.sort((a,b) => (a.importOrder ?? 0) - (b.importOrder ?? 0));
+  } else if (sort === 'status') {
+    arr.sort((a,b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+  } else if (sort === 'alpha') {
+    arr.sort((a,b) => a.raw.localeCompare(b.raw));
+  } else if (sort.startsWith('meta:')) {
+    const col = sort.slice(5);
+    const mc = metaColumns.find(c => c.header === col);
+    arr.sort((a,b) => {
+      const av = a.meta[col] ?? null;
+      const bv = b.meta[col] ?? null;
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      if (typeof av === 'number' && typeof bv === 'number') return bv - av;
+      return String(bv).localeCompare(String(av));
+    });
+  }
+  return arr;
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER KEYWORD LIST
+// ═══════════════════════════════════════════════════
+function getStatusLabel(s){return {fullexact:t('full_exact'),exact:t('exact'),phrase:t('phrase'),broad:t('broad'),notfound:t('not_found')}[s]||s;}
+const barColor = {fullexact:'var(--fullexact)',exact:'var(--exact)',phrase:'var(--phrase)',broad:'var(--broad)',notfound:'var(--notfound)'};
+
+function renderMetaRow(meta) {
+  if (!meta || !metaColumns.length) return '';
+  const items = [];
+  for (const col of metaColumns) {
+    const val = meta[col.header];
+    if (val === null || val === undefined) continue;
+    const disp = formatDisplayValue(val, col.isPercent);
+    if (disp === null) continue;
+    items.push({ label: col.header, val: disp });
+  }
+  if (!items.length) return '';
+  const inner = items.map((it, i) =>
+    (i > 0 ? '<span class="kw-meta-sep"></span>' : '') +
+    `<span class="kw-meta-item"><span class="kw-meta-label">${escHtml(it.label)}</span><span class="kw-meta-val">&nbsp;${escHtml(it.val)}</span></span>`
+  ).join('');
+  return `<div class="kw-meta">${inner}</div>`;
+}
+
+function renderKeywordList() {
+  const list = document.getElementById('kw-list');
+  if (!keywords.length) { list.innerHTML = '<div class="kw-empty">'+t('kw_empty')+'</div>'; return; }
+  const sorted = getSortedKeywords();
+  const filtered = sorted
+    .filter(kw => !kwFilter || kw.raw.toLowerCase().includes(kwFilter))
+    .filter(kw => !statusFilter || kw.status === statusFilter);
+  if (!filtered.length) { list.innerHTML = '<div class="kw-empty">'+t('kw_no_match', escHtml(kwFilter))+'</div>'; return; }
+  const kwIndexMap = new Map(keywords.map((k,i)=>[k,i]));
+  list.innerHTML = filtered.map(kw => {
+    const wordHtml = kw.wordStatuses.length
+      ? kw.wordStatuses.map(ws => `<span class="kw-word ${ws.cls}">${escHtml(ws.word)}</span>`).join('<span style="color:var(--text3);font-size:10px"> </span>')
+      : `<span class="kw-word not-found">${escHtml(kw.raw)}</span>`;
+    const realIdx = kwIndexMap.get(kw) ?? keywords.indexOf(kw);
+    const metaHtml = renderMetaRow(kw.meta);
+    return `<div class="kw-chip" data-kw-idx="${realIdx}" data-kw-raw="${escAttr(kw.raw)}"
+         onmouseenter="onChipMouseEnter(${realIdx})"
+         onmouseleave="onChipMouseLeave()"
+         title="Click to copy keyword">
+      <div class="kw-bar" style="background:${barColor[kw.status]}"></div>
+      <div class="kw-body">
+        <div class="kw-body-top">
+          <div class="kw-words">${wordHtml}</div>
+          <span class="badge badge-${kw.status}">${getStatusLabel(kw.status)}</span>
+        </div>
+        ${metaHtml}
+      </div>
+      <button class="kw-del" onclick="removeKw(${realIdx},event)" title="Remove">&#10005;</button>
+    </div>`;
+  }).join('');
+}
+
+function removeKw(i, event) {
+  if (event) event.stopPropagation();
+  keywords.splice(i, 1);
+  document.getElementById('kw-input').value = keywords.map(k => k.raw).join('\n');
+  runAnalysis();
+}
+
+// ═══════════════════════════════════════════════════
+// CLEAR BUTTONS
+// ═══════════════════════════════════════════════════
+function clearAllKeywords() {
+  keywords = [];
+  metaColumns = [];
+  document.getElementById('kw-input').value = '';
+  document.getElementById('import-stats').classList.remove('visible');
+  document.getElementById('import-stats').innerHTML = '';
+  updateSortDropdown();
+  runAnalysis();
+}
+
+function clearMetaOnly() {
+  metaColumns = [];
+  keywords = keywords.map(kw => ({ ...kw, meta: {} }));
+  updateSortDropdown();
+  renderKeywordList();
+  showToast(t('meta_cleared'));
+  saveState();
+}
+
+// ═══════════════════════════════════════════════════
+// EXCEL IMPORT — dynamic columns
+// ═══════════════════════════════════════════════════
+const KW_ALIASES = new Set(['keyword','keywords','kw','query','search term','search terms']);
+
+function handleXlsxUpload(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const sheetName = wb.SheetNames.includes('Keywords') ? 'Keywords' : wb.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
+
+      if (!rows.length) { showToast('⚠ File is empty', true); return; }
+
+      // Row 0 = headers
+      const rawHeaders = rows[0].map(h => String(h ?? '').trim());
+
+      // Find keyword column
+      let kwCol = -1;
+      for (let i = 0; i < rawHeaders.length; i++) {
+        if (KW_ALIASES.has(rawHeaders[i].toLowerCase())) { kwCol = i; break; }
+      }
+      if (kwCol === -1) { showToast('⚠ No keyword column found', true); return; }
+
+      // Build dynamic meta column list from this file (in header order, excluding kw col)
+      const newFileCols = [];
+      for (let i = 0; i < rawHeaders.length; i++) {
+        if (i === kwCol || !rawHeaders[i]) continue;
+        newFileCols.push({ header: rawHeaders[i], colIdx: i, isPercent: isPercentCol(rawHeaders[i]) });
+      }
+
+      // Merge new columns into global metaColumns (preserve existing order, add new ones)
+      for (const fc of newFileCols) {
+        if (!metaColumns.find(c => c.header === fc.header)) {
+          metaColumns.push({ header: fc.header, isPercent: fc.isPercent });
+        }
+      }
+
+      // Parse data rows
+      const existingByNorm = new Map(keywords.map(k => [k.raw.toLowerCase(), k]));
+      let added = 0, skipped = 0, emptyRows = 0;
+
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        const rawKw = String(row[kwCol] ?? '').trim();
+        if (!rawKw) { emptyRows++; continue; }
+        const norm = rawKw.toLowerCase();
+
+        // Build meta for this row
+        const rowMeta = {};
+        for (const fc of newFileCols) {
+          const cellRaw = row[fc.colIdx];
+          if (cellRaw === '' || cellRaw === null || cellRaw === undefined) continue;
+          const parsed = parseCellValue(cellRaw, fc.isPercent);
+          if (parsed !== null) rowMeta[fc.header] = parsed;
+        }
+
+        if (existingByNorm.has(norm)) {
+          // Partial merge: add missing fields only, don't overwrite existing
+          const existing = existingByNorm.get(norm);
+          for (const [k, v] of Object.entries(rowMeta)) {
+            if (existing.meta[k] === undefined || existing.meta[k] === null) {
+              existing.meta[k] = v;
+            }
+          }
+          skipped++;
+        } else {
+          const kw = { raw: rawKw, status: 'notfound', wordStatuses: [], meta: rowMeta, importOrder: keywords.length + added + 1 };
+          keywords.push(kw);
+          existingByNorm.set(norm, kw);
+          added++;
+        }
+      }
+
+      if (added === 0 && skipped === 0) { showToast('⚠ No data rows found', true); return; }
+
+      // Update textarea
+      document.getElementById('kw-input').value = keywords.map(k => k.raw).join('\n');
+      updateSortDropdown();
+      runAnalysis();
+
+      // Show import stats
+      const statsEl = document.getElementById('import-stats');
+      statsEl.innerHTML = t('imported', added+skipped)+'<br><span>'+t('added_skipped', added, skipped, emptyRows)+'</span>';
+      statsEl.classList.add('visible');
+
+      showToast(t('toast_added', added, skipped));
+    } catch (err) {
+      showToast('⚠ Failed to read file', true);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ═══════════════════════════════════════════════════
+// EXCEL EXPORT — dynamic columns
+// ═══════════════════════════════════════════════════
+function exportToXlsx() {
+  if (!keywords.length) { showToast('⚠ No keywords to export', true); return; }
+  const text = document.getElementById('text-input').value;
+
+  const headers = ['Keyword', 'Status'];
+  metaColumns.forEach(col => headers.push(col.header));
+  headers.push('Title', 'Missing Words');
+
+  const rows = keywords.map(kw => {
+    const missing = (kw.wordStatuses || []).filter(ws => ws.cls === 'not-found' && !ws.isStop).length;
+    const row = [kw.raw, getStatusLabel(kw.status) || kw.status];
+    metaColumns.forEach(col => {
+      const val = kw.meta[col.header];
+      row.push(formatExportValue(val, col.isPercent));
+    });
+    row.push(text, missing || '');
+    return row;
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = [{ wch: 40 }, { wch: 12 }, ...metaColumns.map(() => ({ wch: 14 })), { wch: 80 }, { wch: 14 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Results');
+  XLSX.writeFile(wb, 'keyword_results.xlsx');
+  showToast(`✓ Exported ${keywords.length} keywords`);
+}
+
+// ═══════════════════════════════════════════════════
+// COPY / TOAST
+// ═══════════════════════════════════════════════════
+let toastTimer = null;
+function copyToClipboard(text, msg) {
+  const done = () => showToast(msg || 'Copied');
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+  else fallbackCopy(text, done);
+}
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0;';
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); cb();
+}
+function copyWord(w) { copyToClipboard(w, t('copied', w)); }
+function copyKeyword(raw) { copyToClipboard(raw, t('copied', raw)); }
+function showToast(msg, isError) {
+  const t = document.getElementById('toast'); t.textContent=msg;
+  t.classList.toggle('error', !!isError); t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════════
+// FILTER
+// ═══════════════════════════════════════════════════
+function filterKeywords() {
+  const inp = document.getElementById('kw-search');
+  kwFilter = inp.value.trim().toLowerCase();
+  inp.closest('.kw-search').classList.toggle('has-value', kwFilter.length > 0);
+  renderKeywordList();
+}
+
+function toggleStatusFilter(status) {
+  statusFilter = statusFilter === status ? null : status;
+  // Update button active states
+  document.querySelectorAll('.sf-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.s === statusFilter);
+  });
+  renderKeywordList();
+}
+
+function clearStatusFilter() {
+  statusFilter = null;
+  document.querySelectorAll('.sf-btn').forEach(btn => btn.classList.remove('active'));
+  renderKeywordList();
+}
+function clearKwFilter() {
+  const inp = document.getElementById('kw-search'); inp.value=''; kwFilter='';
+  inp.closest('.kw-search').classList.remove('has-value'); inp.focus(); renderKeywordList();
+}
+function setKwFilter(word) {
+  const inp = document.getElementById('kw-search'); inp.value=word;
+  kwFilter = word.toLowerCase();
+  inp.closest('.kw-search').classList.toggle('has-value', word.length>0);
+  renderKeywordList();
+}
+
+// ═══════════════════════════════════════════════════
+// CHAR COUNTER
+// ═══════════════════════════════════════════════════
+const CHAR_LIMIT = 200;
+let _textTaFocused = false;
+function updateCharCount() {
+  const ta=document.getElementById('text-input'), el=document.getElementById('char-count');
+  const len=ta.value.length;
+  const sel=_textTaFocused ? ta.value.substring(ta.selectionStart,ta.selectionEnd) : '';
+  if (sel.length>0) {
+    el.innerHTML=`<span class="sel">${sel.length} selected</span>`;
+    el.classList.remove('counting','overlimit');
+  } else {
+    const over=len>CHAR_LIMIT;
+    el.textContent=over?`⚠ ${len} / ${CHAR_LIMIT}`:`${len} chars`;
+    el.classList.toggle('counting',len>0&&!over);
+    el.classList.toggle('overlimit',over);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// HOVER PREVIEW
+// ═══════════════════════════════════════════════════
+function onChipMouseEnter(kwIndex) {
+  hoveredKwIndex = kwIndex;
+  const kw = keywords[kwIndex]; if (!kw) return;
+  const text = document.getElementById('text-input').value;
+  const {status,spans} = checkKeyword(text, kw.raw);
+  if (status === 'notfound') {
+    const partialSpans = [], tokens = _cachedTokenStream || buildTokenStream(text), seen = new Set();
+    for (const word of tokenize(kw.raw).filter(w=>!isStopWord(w))) {
+      const lm=lemma(word); if(seen.has(lm))continue; seen.add(lm);
+      for (const t of tokens) if(t.lemma===lm) partialSpans.push({start:t.origStart,end:t.origEnd,type:'broad'});
+    }
+    renderPreviewHover(text, partialSpans);
+  } else {
+    renderPreviewHover(text, spans);
+  }
+  document.querySelectorAll('.kw-chip').forEach(el => el.classList.toggle('hovered', el.dataset.kwIdx==kwIndex));
+}
+function onChipMouseLeave() {
+  hoveredKwIndex = -1;
+  const text = document.getElementById('text-input').value;
+  // Use cached spans — no need to re-run checkKeyword for all keywords
+  renderPreview(text, _cachedAllSpans);
+  document.querySelectorAll('.kw-chip').forEach(el => el.classList.remove('hovered'));
+}
+function renderPreviewHover(text, spans) {
+  const preview = document.getElementById('preview'); if (!text) return;
+  const merged = mergeSpans(spans);
+  if (!merged.length) { preview.innerHTML = escHtml(text); return; }
+  preview.innerHTML = _renderSpansToHtml(text, merged, true);
+  attachMarkTooltips();
+}
+
+// ═══════════════════════════════════════════════════
+// TITLE CASE
+// ═══════════════════════════════════════════════════
+const TC_LOWER = new Set(['a','an','the','and','but','or','for','nor','so','yet','in','on','at','to','by','of','up','as','via','per','with','from','into','onto','over','than','vs','vs.']);
+function capitalize(w){return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();}
+function toTitleCase(str){return str.split(/(\s+)/).map((p,i)=>/^\s+$/.test(p)?p:(i===0?capitalize(p):TC_LOWER.has(p.toLowerCase())?p.toLowerCase():capitalize(p))).join('');}
+function applyTitleCase() {
+  const ta=document.getElementById('text-input'),s=ta.selectionStart,e=ta.selectionEnd;
+  if(s===e){showToast(t('select_first'));return;}
+  const conv=toTitleCase(ta.value.slice(s,e));
+  ta.value=ta.value.slice(0,s)+conv+ta.value.slice(e);
+  ta.setSelectionRange(s,s+conv.length);ta.focus();showToast(t('title_case_done'));onTextInput();
+}
+
+// ═══════════════════════════════════════════════════
+// DUPLICATE WORDS
+// ═══════════════════════════════════════════════════
+function findAllSubstr(haystack, needle) {
+  const res=[]; let i=0;
+  while(true){const p=haystack.indexOf(needle,i);if(p===-1)break;res.push({start:p,end:p+needle.length});i=p+1;}
+  return res;
+}
+
+function checkDuplicates(text) {
+  const panel=document.getElementById('dup-panel');
+  if (!text.trim()){panel.style.display='none';return;}
+
+  // English
+  const tokens=text.toLowerCase().split(/[^a-zA-Z\u00C0-\u024F]+/).filter(Boolean);
+  const sc2={},sd={};
+  for (const t of tokens) {
+    if(isStopWord(t)||t.length<3)continue;
+    const s=lemma(t);sc2[s]=(sc2[s]||0)+1;if(!sd[s])sd[s]=t;
+  }
+  const dups=Object.entries(sc2).filter(([,cnt])=>cnt>2).sort((a,b)=>b[1]-a[1]);
+  if (!dups.length){panel.style.display='none';return;}
+  panel.style.display='flex';
+  panel.innerHTML='<span class="dup-label">\u26a0 Repeated &gt;2\xd7:</span>'+
+    dups.map(([s,cnt])=>{
+      const d=sd[s],safe=d.replace(/'/g,"\\'"),ss=s.replace(/'/g,"\\'");
+      return '<button class="dup-tag"'+
+        ' onclick="setKwFilter(\''+safe+'\');event.stopPropagation();"'+
+        ' onmouseenter="onDupTagHover(\''+ss+'\')"'+
+        ' onmouseleave="onDupTagLeave()"'+
+        ' title="Click to filter \xb7 Hover to highlight">'+
+        escHtml(d)+' \xd7'+cnt+'</button>';
+    }).join('');
+}
+function _renderDupHover(text, redSpans) {
+  const merged=_cachedAllSpans; // use cached — avoids re-running checkKeyword
+  const allMarks=[];
+  for(const s of merged){if(!redSpans.some(r=>r.start<s.end&&r.end>s.start))allMarks.push({...s,dim:true});}
+  for(const r of redSpans)allMarks.push({...r,dim:false});
+  allMarks.sort((a,b)=>a.start-b.start);
+  let html='',cursor=0;
+  for(const s of allMarks){
+    if(s.start<cursor||s.start>=text.length||s.end>text.length)continue;
+    if(s.start>cursor)html+='<span style="opacity:.2">'+escHtml(text.slice(cursor,s.start))+'</span>';
+    html+=s.dim
+      ?'<mark class="hl-'+s.type+'" style="opacity:.2">'+escHtml(text.slice(s.start,s.end))+'</mark>'
+      :'<mark style="background:rgba(255,180,0,.28);color:#ffba00;border-radius:3px;padding:1px 0;font-weight:700;border-bottom:2px solid #ffba00">'+escHtml(text.slice(s.start,s.end))+'</mark>';
+    cursor=s.end;
+  }
+  if(cursor<text.length)html+='<span style="opacity:.2">'+escHtml(text.slice(cursor))+'</span>';
+  document.getElementById('preview').innerHTML=html;
+}
+function onDupTagHover(stemKey) {
+  dupHoverStem=stemKey;
+  const text=document.getElementById('text-input').value; if(!text)return;
+  const tokens=buildTokenStream(text); // uses cache
+  const redSpans=tokens.filter(t=>t.lemma===stemKey).map(t=>({start:t.origStart,end:t.origEnd,type:'dup-red'}));
+  if(!redSpans.length)return;
+  _renderDupHover(text,redSpans);
+}
+function onDupTagLeave() {
+  dupHoverStem=null;
+  const text=document.getElementById('text-input').value;
+  renderPreview(text, _cachedAllSpans);
+}
+
+// ═══════════════════════════════════════════════════
+// MISSING WORDS PANEL
+// ═══════════════════════════════════════════════════
+function toggleMissing() {
+  missingOpen=!missingOpen;
+  document.getElementById('missing-panel').classList.toggle('open',missingOpen);
+  document.getElementById('missing-btn').classList.toggle('active',missingOpen);
+  if(missingOpen)renderMissing();
+}
+function renderMissing() {
+  const tags=document.getElementById('missing-tags'),sub=document.getElementById('missing-subtitle');
+  const mm=new Map();
+  for(const kw of keywords){
+    if(kw.status==='exact')continue;
+    for(const ws of kw.wordStatuses.filter(w=>w.cls==='not-found'&&!w.isStop)){
+      const key=ws.word.toLowerCase();
+      if(!mm.has(key))mm.set(key,{word:ws.word,fromKws:[kw.raw]});
+      else{const e=mm.get(key);if(!e.fromKws.includes(kw.raw))e.fromKws.push(kw.raw);}
+    }
+  }
+  const items=[...mm.values()];
+  if(!items.length){tags.innerHTML='<span style="color:var(--text3);font-size:11px;font-family:\'JetBrains Mono\',monospace;">'+t('all_matched')+'</span>';sub.textContent='';return;}
+  sub.textContent=t('missing_n', items.length);
+  tags.innerHTML=items.map(it=>{
+    const w=it.word.replace(/'/g,"\\'");
+    return `<span class="missing-tag" title="Hover to filter · Click to copy\nFrom: ${escHtml(it.fromKws.join(', '))}" onmouseenter="setKwFilter('${w}')" onmouseleave="clearKwFilter()" onclick="copyWord('${w}');event.stopPropagation();">${escHtml(it.word)}</span>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER PREVIEW
+// ═══════════════════════════════════════════════════
+function _renderSpansToHtml(text, spans, dimGap) {
+  // Shared render loop used by renderPreview and renderPreviewHover.
+  // Groups consecutive same-type fullexact/exact spans (whitespace-only gap)
+  // into a <span class="kw-group"> so the border-bottom is continuous.
+  let html='', cursor=0, i=0;
+  const gap = dimGap ? ' style="opacity:.25"' : '';
+  while(i<spans.length){
+    const s=spans[i];
+    if(s.start>=text.length||s.end>text.length||s.start<cursor){i++;continue;}
+    if(s.start>cursor) html+=`<span data-s="${cursor}"${gap}>${escHtml(text.slice(cursor,s.start))}</span>`;
+    if(s.type==='fullexact'||s.type==='exact'){
+      // Find how far this group extends
+      let j=i+1;
+      while(j<spans.length&&spans[j].type===s.type&&/^\s*$/.test(text.slice(spans[j-1].end,spans[j].start)))j++;
+      const isGroup=j>i+1;
+      if(isGroup) html+=`<span class="kw-group kw-group-${s.type}">`;
+      for(let k=i;k<j;k++){
+        const gs=spans[k];
+        if(k>i) html+=escHtml(text.slice(spans[k-1].end,gs.start)); // space inside group
+        html+=`<mark class="hl-${gs.type}" data-s="${gs.start}" data-e="${gs.end}">${escHtml(text.slice(gs.start,gs.end))}</mark>`;
+      }
+      if(isGroup) html+=`</span>`;
+      cursor=spans[j-1].end; i=j;
+    } else {
+      html+=`<mark class="hl-${s.type}" data-s="${s.start}" data-e="${s.end}">${escHtml(text.slice(s.start,s.end))}</mark>`;
+      cursor=s.end; i++;
+    }
+  }
+  if(cursor<text.length) html+=`<span data-s="${cursor}"${gap}>${escHtml(text.slice(cursor))}</span>`;
+  return html;
+}
+function renderPreview(text, spans) {
+  const preview=document.getElementById('preview'),hlc=document.getElementById('hl-count');
+  if(!text){preview.innerHTML='<span class="preview-empty">Preview will appear here...</span>';hlc.textContent='';return;}
+  hlc.textContent=spans.length?t('highlights', spans.length):'';
+  if(!spans.length){preview.textContent=text;return;}
+  preview.innerHTML=_renderSpansToHtml(text, spans, false);
+  attachMarkTooltips();
+}
+
+// ═══════════════════════════════════════════════════
+// PREVIEW MARK TOOLTIP — hover word → see which keywords use it
+// ═══════════════════════════════════════════════════
+const _STATUS_COLORS = {
+  fullexact:'var(--fullexact)', exact:'var(--exact)',
+  phrase:'var(--phrase)', broad:'var(--broad)', notfound:'var(--notfound)'
+};
+let _lastTooltipMark = null;
+
+// Use event delegation on preview pane — one listener, no per-mark binding needed
+function attachMarkTooltips() {
+  const preview = document.getElementById('preview');
+  preview.removeEventListener('mousemove',  _previewMouseMoveHandler);
+  preview.removeEventListener('mouseleave', _previewMouseLeave);
+  preview.addEventListener('mousemove',  _previewMouseMoveHandler);
+  preview.addEventListener('mouseleave', _previewMouseLeave);
+}
+
+function _getMarkWithKws(target) {
+  // Walk up from target to find a mark with data-kws
+  let el = target;
+  while (el && el.id !== 'preview') {
+    if (el.tagName === 'MARK' && el.dataset && el.dataset.kws) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+function _previewMouseMoveHandler(e) {
+  const mark = _getMarkAncestor(e.target);
+  if (mark) {
+    if (mark !== _lastTooltipMark) {
+      // Moved to a different mark — re-render tooltip content
+      _lastTooltipMark = mark;
+      _showKwTooltipAtPoint(e.clientX, e.clientY);
+    } else {
+      // Same mark — just reposition
+      _positionTooltip(e.clientX, e.clientY);
+    }
+  } else {
+    // Not over a mark — hide immediately
+    _hideKwTooltip();
+    _lastTooltipMark = null;
+  }
+}
+function _previewMouseLeave(e) {
+  _hideKwTooltip();
+  _lastTooltipMark = null;
+}
+
+// Find nearest mark ancestor (not requiring data-kws — any mark)
+function _getMarkAncestor(el) {
+  while (el && el.id !== 'preview') {
+    if (el.tagName === 'MARK') return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+// Get the character offset in the full preview text at mouse position
+function _getCharOffsetAtPoint(mx, my) {
+  // Use caret position to find which DOM node was hit
+  let range = null;
+  if (document.caretRangeFromPoint) {
+    range = document.caretRangeFromPoint(mx, my);
+  } else if (document.caretPositionFromPoint) {
+    const pos = document.caretPositionFromPoint(mx, my);
+    if (pos) { range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); }
+  }
+  if (!range) return -1;
+
+  // Walk up from the text node to find the closest element with data-s
+  let el = range.startContainer;
+  if (el.nodeType === Node.TEXT_NODE) el = el.parentElement;
+  while (el && el.id !== 'preview') {
+    if (el.dataset && el.dataset.s !== undefined) {
+      // data-s is the original text start offset of this element
+      // range.startOffset is char offset within the text node (el.firstChild)
+      const nodeStart = parseInt(el.dataset.s, 10);
+      const intraOffset = range.startContainer.nodeType === Node.TEXT_NODE
+        ? range.startOffset : 0;
+      return nodeStart + intraOffset;
+    }
+    el = el.parentElement;
+  }
+  return -1;
+}
+
+function _showKwTooltipAtPoint(mx, my) {
+  const tip = document.getElementById('kw-tooltip');
+
+  // Get exact char position under cursor
+  const charPos = _getCharOffsetAtPoint(mx, my);
+  if (charPos < 0) return;
+
+  // Find all _spanKwMap entries whose span contains this char position
+  const seen = new Set();
+  const kwList = [];
+  for (const entry of _spanKwMap.values()) {
+    if (charPos >= entry.start && charPos < entry.end) {
+      for (const kw of entry.kws) {
+        const key = kw.raw + '|' + kw.status;
+        if (!seen.has(key)) { seen.add(key); kwList.push(kw); }
+      }
+    }
+  }
+  if (!kwList.length) return;
+
+  const count = kwList.length;
+  tip.innerHTML =
+    '<div class="kw-tooltip-title">In ' + count + ' keyword' + (count!==1?'s':'') + '</div>' +
+    kwList.map(kw => {
+      const color = _STATUS_COLORS[kw.status] || 'var(--text2)';
+      const label = getStatusLabel(kw.status);
+      return '<div class="kw-tooltip-item">' +
+        '<div class="kw-tooltip-dot" style="background:'+color+'"></div>' +
+        '<span>'+escHtml(kw.raw)+'</span>' +
+        '<span class="kw-tooltip-badge badge-'+kw.status+'">'+label+'</span>' +
+        '</div>';
+    }).join('');
+
+  tip.classList.add('visible');
+  _positionTooltip(mx, my);
+}
+
+function _positionTooltip(mx, my) {
+  const tip = document.getElementById('kw-tooltip');
+  if (!tip.classList.contains('visible')) return;
+  const tw = tip.offsetWidth, th = tip.offsetHeight, pad = 16;
+  let x = mx + pad, y = my + pad;
+  if (x + tw > window.innerWidth - 8)  x = mx - tw - pad;
+  if (y + th > window.innerHeight - 8) y = my - th - pad;
+  tip.style.left = Math.max(8, x) + 'px';
+  tip.style.top  = Math.max(8, y) + 'px';
+}
+
+function _hideKwTooltip() {
+  document.getElementById('kw-tooltip').classList.remove('visible');
+}
+
+// ═══════════════════════════════════════════════════
+// COUNTERS
+// ═══════════════════════════════════════════════════
+function updateCounters() {
+  const c={fullexact:0,exact:0,phrase:0,broad:0,notfound:0};
+  keywords.forEach(kw=>c[kw.status]++);
+  // fullexact + exact share the green counter
+  document.getElementById('cnt-fullexact').textContent = c.fullexact;
+  document.getElementById('cnt-exact').textContent = c.exact;
+  ['phrase','broad','notfound'].forEach(k=>document.getElementById('cnt-'+k).textContent=c[k]);
+  updateCoverage();
+}
+
+// ═══════════════════════════════════════════════════
+// SEARCH VOLUME COVERAGE
+// Finds the best numeric meta column (preferring clicks-like names),
+// sums values per match status, renders segmented bar + stats.
+// ═══════════════════════════════════════════════════
+
+// Shared helper: render bar + stats into given DOM elements using kwStatusList [{status, meta}]
+function _renderCoverageSection(kwStatusList, volColHeader, barId, statsId, pctId, volId) {
+  const barEl   = document.getElementById(barId);
+  const statsEl = document.getElementById(statsId);
+  const pctEl   = document.getElementById(pctId);
+  const volEl   = document.getElementById(volId);
+
+  const vol = {fullexact:0, exact:0, phrase:0, broad:0, notfound:0};
+  let total = 0;
+  for (const kw of kwStatusList) {
+    const v = typeof kw.meta[volColHeader] === 'number' ? kw.meta[volColHeader] : 0;
+    vol[kw.status] += v;
+    total += v;
+  }
+  if (!total) { if(pctEl) pctEl.textContent=''; if(volEl) volEl.textContent=''; if(barEl) barEl.innerHTML=''; if(statsEl) statsEl.innerHTML=''; return false; }
+
+  const pct = {};
+  for (const s of ['fullexact','exact','phrase','broad','notfound']) pct[s] = vol[s] / total * 100;
+  const coveredPct = pct.fullexact + pct.exact + pct.phrase + pct.broad;
+  const totalColor = coveredPct >= 70 ? 'var(--exact)' : coveredPct >= 40 ? 'var(--broad)' : 'var(--notfound)';
+
+  if (pctEl) { pctEl.textContent = t('covered', coveredPct.toFixed(1)); pctEl.style.color = totalColor; }
+  const coveredVol = vol.fullexact + vol.exact + vol.phrase + vol.broad;
+  if (volEl) volEl.textContent = '(' + coveredVol.toLocaleString() + ' covered)';
+
+  const segments = [
+    { key:'fullexact', cls:'seg-fullexact', color:'var(--fullexact)' },
+    { key:'exact',    cls:'seg-exact',    color:'var(--exact)'    },
+    { key:'phrase',   cls:'seg-phrase',   color:'var(--phrase)'   },
+    { key:'broad',    cls:'seg-broad',    color:'var(--broad)'    },
+    { key:'notfound', cls:'seg-notfound', color:'var(--notfound)' },
+  ].filter(s => pct[s.key] > 0.05);
+
+  if (barEl) barEl.innerHTML = segments.map((s, i) => {
+    const r = [];
+    if (i === 0 && i === segments.length - 1) r.push('border-radius:4px');
+    else if (i === 0) r.push('border-radius:4px 0 0 4px');
+    else if (i === segments.length - 1) r.push('border-radius:0 4px 4px 0');
+    const op = s.key === 'notfound' ? 'opacity:.28;' : '';
+    return `<div class="coverage-seg ${s.cls}" style="width:${pct[s.key].toFixed(2)}%;background:${s.color};${op}${r.join(';')}"></div>`;
+  }).join('');
+
+  const statDefs = [
+    { key:'fullexact', label:t('full_exact'), color:'var(--fullexact)' },
+    { key:'exact',    label:t('exact'),     color:'var(--exact)'    },
+    { key:'phrase',   label:t('phrase'),    color:'var(--phrase)'   },
+    { key:'broad',    label:t('broad'),     color:'var(--broad)'    },
+    { key:'notfound', label:t('not_found'), color:'var(--notfound)' },
+  ];
+  if (statsEl) statsEl.innerHTML = statDefs.map(s => {
+    if (vol[s.key] === 0) return '';
+    return `<div class="coverage-stat">
+      <div class="coverage-stat-dot" style="background:${s.color}"></div>
+      <span class="coverage-stat-pct" style="color:${s.color}">${pct[s.key].toFixed(1)}%</span>
+      <span class="coverage-stat-label">${s.label}</span>
+      <span class="coverage-stat-vol">(${vol[s.key].toLocaleString()})</span>
+    </div>`;
+  }).join('');
+
+  return true;
+}
+
+function updateCoverage() {
+  const panel = document.getElementById('coverage-panel');
+  const colEl = document.getElementById('coverage-col-name');
+
+  // 1. Find the best volume column
+  const CLICK_PREF = /clicks?|impressions?|search.?vol|volume/i;
+  const ORDER_PREF = /orders?|sales|revenue/i;
+  let volCol = null;
+  if (metaColumns.length) {
+    volCol = metaColumns.find(c => !c.isPercent && CLICK_PREF.test(c.header))
+          || metaColumns.find(c => !c.isPercent && ORDER_PREF.test(c.header))
+          || metaColumns.find(c => !c.isPercent);
+  }
+
+  if (!volCol) {
+    panel.classList.remove('visible');
+    const ve = document.getElementById('coverage-total-vol'); if (ve) ve.textContent = '';
+    return;
+  }
+
+  const hasValues = keywords.some(kw => typeof kw.meta[volCol.header] === 'number' && kw.meta[volCol.header] > 0);
+  if (!hasValues) { panel.classList.remove('visible'); return; }
+
+  colEl.textContent = '· ' + volCol.header;
+
+  const ok = _renderCoverageSection(keywords, volCol.header, 'coverage-bar', 'coverage-stats', 'coverage-total-pct', 'coverage-total-vol');
+  if (!ok) { panel.classList.remove('visible'); return; }
+  panel.classList.add('visible');
+
+  // NEW label & old coverage section
+  const newTag = document.getElementById('coverage-new-tag');
+  const oldSec = document.getElementById('old-coverage-section');
+  if (compareMode && _oldKwStatuses.length) {
+    if (newTag) newTag.style.display = 'inline';
+    if (oldSec) {
+      // Build a combined list: keyword meta + old status
+      const oldKwList = keywords.map((kw, i) => ({ meta: kw.meta, status: (_oldKwStatuses[i] || {status:'notfound'}).status }));
+      const oldHasValues = oldKwList.some(kw => typeof kw.meta[volCol.header] === 'number' && kw.meta[volCol.header] > 0);
+      if (oldHasValues) {
+        _renderCoverageSection(oldKwList, volCol.header, 'old-coverage-bar', 'old-coverage-stats', 'old-coverage-total-pct', 'old-coverage-total-vol');
+        oldSec.style.display = 'block';
+      } else {
+        oldSec.style.display = 'none';
+      }
+    }
+  } else {
+    if (newTag) newTag.style.display = 'none';
+    if (oldSec) oldSec.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// DEMO — uses dynamic metaColumns
+// ═══════════════════════════════════════════════════
+function loadDemo() {
+
+  metaColumns = [
+    { header: 'Total Orders', isPercent: false },
+    { header: 'Total Clicks', isPercent: false },
+    { header: 'Days in Top',  isPercent: false },
+    { header: 'Conversion',   isPercent: true  },
+  ];
+
+  // Demo title contains gaps so every match type is represented
+  // Title: QUOKKA Baby game Mat for Floor Play – Super Soft Plush ...
+  const demoTitle = 'QUOKKA Baby game Mat for Floor Play \u2013 Super Soft Plush Baby Mat Surface ABC Crawling Mats for Babies \u2013 Extra Thick (0.3in) Non-Slip Padded Nursery Rug for Infant \u2013 Foldable Toddlers Play Carpet for Kids Play Area';
+
+  const demoData = [
+    // ── FULL EXACT ─────────────────────────────────────────────────
+    // verbatim word-for-word match in title
+    ['Super Soft Plush',           3100, 21000, 45, 14.7],  // FE: exactly "Super Soft Plush"
+    ['Non-Slip',                    820,  5600, 19, 13.1],  // FE: "Non-Slip" verbatim (dash)
+    ['non slip',                    640,  4200, 15, 12.8],  // FE: matches "Non-Slip" after normalization
+    // ── EXACT (lemma match, consecutive) ───────────────────────────
+    // all words consecutive but form differs (plural/gerund)
+    ['baby mat',                   1240,  8300, 28, 14.8],  // EXACT: "Baby Mat" in title
+    ['crawling mats for babies',    890,  5200, 22, 17.1],  // EXACT: "Crawling Mats for Babies"
+    ['foldable toddlers',           420,  2900, 12, 13.4],  // EXACT via lemma: "Foldable Toddlers"
+    // ── PHRASE (in-order, words may have gaps) ──────────────────────
+    // keyword words appear in title in order but not consecutive
+    ['baby mat for floor',          710,  4900, 18, 14.5],  // PHRASE: Baby...Mat for Floor (game between)
+    ['baby floor play',             390,  2700, 11, 13.0],  // PHRASE: Baby...Floor...Play (gaps)
+    ['soft mat babies',             280,  1900,  8, 12.5],  // PHRASE: Soft...Mat...Babies (gaps)
+    ['kids play area',              210,  1500,  7, 12.2],  // PHRASE: Kids...Play...Area (pos 34,35,36)
+    // ── BROAD (all content words present, any order) ────────────────
+    ['infant nursery padded',       290,  2200,  9, 13.2],  // BROAD: all words in title, any order
+    ['thick plush floor rug',       180,  1300,  6, 12.0],  // BROAD: all content words present
+    ['toddler rug area',            160,  1100,  5, 11.8],  // BROAD: Toddlers(30)/Rug(26)/Area(36) any order
+    // ── NOT FOUND ───────────────────────────────────────────────────
+    ['book holder',                   0,   120,  0,  0   ],  // NF: not in title
+    ['wireless speaker',              0,    45,  0,  0   ],  // NF: not in title
+    ['waterproof baby mat',           0,    80,  0,  0   ],  // NF: "waterproof" missing
+  ];
+
+  document.getElementById('kw-input').value = demoData.map(d=>d[0]).join('\n');
+  keywords = demoData.map(([raw,orders,clicks,days,conv], i) => ({
+    raw, status:'notfound', wordStatuses:[],
+    importOrder: i + 1,
+    meta:{'Total Orders':orders,'Total Clicks':clicks,'Days in Top':days,'Conversion':conv}
+  }));
+  const _demoTa = document.getElementById('text-input');
+  _demoTa.value = demoTitle;
+  autoResizeTA(_demoTa);
+
+  bulletTexts = [
+    'SUPER SOFT & EXTRA THICK – Baby mat features 0.3in non-slip padded base with ultra-soft plush top layer; gentle on infant skin during tummy time, crawling and floor play',
+    'FOLDABLE & EASY TO STORE – Crawling mat for babies folds flat in seconds for quick storage or travel; lightweight nursery rug perfect for kids play area at home',
+    'ABC LEARNING PLAY AREA – Baby floor mat printed with colorful alphabet letters and numbers to stimulate early development; ideal for infants, toddlers and kids play area',
+    'NON-SLIP WATERPROOF BASE – Anti-slip bottom keeps the baby mat firmly in place on any floor surface; wipe-clean waterproof layer makes it easy to keep the crawling mat hygienic',
+    'PERFECT BABY SHOWER GIFT – Arrives in premium packaging; this soft padded baby mat is an ideal gift for new parents seeking a safe non-toxic certified play surface for their infant or toddler – foldable toddlers carpet doubles as a nursery rug for floor play',
+  ];
+  descriptionText = 'Give your baby a safe and comfortable space to play, learn and grow with the QUOKKA Baby Play Mat. This extra thick (0.3in) non-slip padded baby mat features a super soft plush surface gentle on delicate infant skin during tummy time and crawling. The foldable design makes storage effortless – simply fold and tuck away when not in use. Our large baby floor mat is printed with colorful ABC letters and numbers to stimulate early development, making it the ideal nursery rug, kids play area mat or baby shower gift for new parents.';
+  renderBulletInputs();
+  const _descTa = document.getElementById('desc-ta');
+  if (_descTa) { _descTa.value = descriptionText; setTimeout(() => autoResizeTA(_descTa), 0); }
+
+  updateSortDropdown();
+  runAnalysis();
+  const statsEl=document.getElementById('import-stats');
+  statsEl.innerHTML=t('demo_loaded', demoData.length);
+  statsEl.classList.add('visible');
+}
+
+
+
+// ═══════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════
+function toggleTheme() {
+  const light=document.body.classList.toggle('theme-light');
+  document.getElementById('theme-label').textContent=light?t('theme_dark'):t('theme_light');
+  saveState();
+}
+
+// ═══════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════
+function escAttr(str) {
+  return str.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escHtml(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ═══════════════════════════════════════════════════
+// COMPARE MODE
+// ═══════════════════════════════════════════════════
+function toggleCompare() {
+  compareMode = !compareMode;
+  const btn = document.getElementById('compare-btn');
+  const paneOld = document.getElementById('pane-old');
+  if (compareMode) {
+    btn.classList.add('active');
+    paneOld.style.display = '';
+    runOldAnalysis();
+  } else {
+    btn.classList.remove('active');
+    paneOld.style.display = 'none';
+    _oldKwStatuses = [];
+    _oldCachedText = null;
+    updateCoverage();
+  }
+  saveState();
+}
+
+let _oldTextDebounce = null;
+function onOldTextInput() {
+  clearTimeout(_oldTextDebounce);
+  _oldTextDebounce = setTimeout(runOldAnalysis, 200);
+  updateOldCharCount();
+  autoResizeTA(document.getElementById('old-text-input'));
+}
+
+function updateOldCharCount() {
+  const ta = document.getElementById('old-text-input');
+  const el = document.getElementById('old-char-count');
+  if (!ta || !el) return;
+  el.textContent = ta.value.length + ' chars';
+  el.classList.toggle('counting', ta.value.length > 0);
+}
+
+function runOldAnalysis() {
+  if (!compareMode) return;
+  const oldText = document.getElementById('old-text-input').value;
+  if (oldText === _oldCachedText && _oldKwStatuses.length === keywords.length) return;
+  _oldCachedText = oldText;
+
+  if (!oldText) {
+    _oldKwStatuses = [];
+    _oldCachedAllSpans = [];
+    renderOldPreview('', []);
+    updateCoverage();
+    return;
+  }
+
+  // Temporarily null the cached token stream so findPhrase builds
+  // from oldText instead of reusing the new-title cache
+  const _savedTokenStream = _cachedTokenStream;
+  _cachedTokenStream = null;
+
+  const allSpans = [];
+  _oldKwStatuses = keywords.map(kw => {
+    const { status, spans } = checkKeyword(oldText, kw.raw);
+    allSpans.push(...spans);
+    return { status, spans };
+  });
+
+  _cachedTokenStream = _savedTokenStream;
+  _oldCachedAllSpans = mergeSpans(allSpans);
+  renderOldPreview(oldText, _oldCachedAllSpans);
+  updateOldCharCount();
+  updateCoverage();
+}
+
+function renderOldPreview(text, spans) {
+  const preview = document.getElementById('old-preview');
+  const hlc = document.getElementById('old-hl-count');
+  if (!preview) return;
+  if (!text) {
+    preview.innerHTML = '<span class="preview-empty">Old preview will appear here...</span>';
+    if (hlc) hlc.textContent = '';
+    return;
+  }
+  if (hlc) hlc.textContent = spans.length ? t('highlights', spans.length) : '';
+  if (!spans.length) { preview.textContent = text; return; }
+  preview.innerHTML = _renderSpansToHtml(text, spans, false);
+}
+
+// ═══════════════════════════════════════════════════
+// INLINE CONFIRM
+// ═══════════════════════════════════════════════════
+function requireConfirm(btn, fn) {
+  if (btn.dataset.confirming) {
+    clearTimeout(btn._confirmTimer);
+    delete btn.dataset.confirming;
+    btn.textContent = btn._origText;
+    btn.classList.remove('confirming');
+    fn();
+    return;
+  }
+  btn._origText = btn.textContent;
+  btn.dataset.confirming = '1';
+  btn.textContent = '✓ Confirm?';
+  btn.classList.add('confirming');
+  btn._confirmTimer = setTimeout(() => {
+    delete btn.dataset.confirming;
+    btn.textContent = btn._origText;
+    btn.classList.remove('confirming');
+  }, 2500);
+}
+
+// ═══════════════════════════════════════════════════
+// COPY TITLE TEXT
+// ═══════════════════════════════════════════════════
+function copyTitleText() {
+  const text = document.getElementById('text-input').value;
+  if (!text) { showToast('Nothing to copy', true); return; }
+  copyToClipboard(text, '\u2713 Title copied');
+}
+
+// ═══════════════════════════════════════════════════
+// BATCH PASTE PREVIEW
+// ═══════════════════════════════════════════════════
+let _pendingBatchText = null;
+
+function _parseBatchFull(text) {
+  const fmt = detectTextareaFormat(text);
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+  if (fmt === 'table' && lines.length >= 2) {
+    const hdrs = lines[0].split('\t').map(h => h.trim());
+    let kwCol = 0;
+    for (let i = 0; i < hdrs.length; i++) {
+      if (KW_ALIASES.has(hdrs[i].toLowerCase())) { kwCol = i; break; }
+    }
+    const metaIdxs = hdrs.map((h, i) => ({ h, i })).filter(({ h, i }) => i !== kwCol && h);
+    const rows = lines.slice(1).map(l => {
+      const cells = l.split('\t');
+      const raw = (cells[kwCol] || '').trim();
+      if (!raw) return null;
+      const meta = {};
+      metaIdxs.forEach(({ h, i }) => {
+        const v = parseCellValue((cells[i] || '').trim(), isPercentCol(h));
+        if (v !== null) meta[h] = v;
+      });
+      return { raw, meta };
+    }).filter(Boolean);
+    return { rows, metaHeaders: metaIdxs.map(m => m.h) };
+  }
+
+  if (fmt === 'pipe') {
+    const first = lines[0].split('|').map(s => s.trim());
+    const isHdr = first.length > 1 && isNaN(Number(first[1].replace(/[,%]/g, '')));
+    const pipeHdrs = isHdr ? first.slice(1) : [];
+    const rows = lines.slice(isHdr ? 1 : 0).map(l => {
+      const parts = l.split('|').map(s => s.trim());
+      const raw = parts[0]; if (!raw) return null;
+      const meta = {};
+      parts.slice(1).forEach((v, i) => {
+        const h = pipeHdrs[i] || `Col ${i + 1}`;
+        const val = parseCellValue(v, isPercentCol(h));
+        if (val !== null) meta[h] = val;
+      });
+      return { raw, meta };
+    }).filter(Boolean);
+    return { rows, metaHeaders: pipeHdrs };
+  }
+
+  const raws = lines.length === 1
+    ? lines[0].split(',').map(p => p.trim()).filter(Boolean)
+    : lines;
+  return { rows: raws.map(raw => ({ raw, meta: {} })), metaHeaders: [] };
+}
+
+function _showBatchPreview(parsed, existingNorms) {
+  const { rows, metaHeaders } = parsed;
+  if (!rows.length) { _pendingBatchText = null; return; }
+
+  const newRows = rows.filter(r => !existingNorms.has(r.raw.toLowerCase()));
+  const dupRows = rows.filter(r =>  existingNorms.has(r.raw.toLowerCase()));
+  const newCount = newRows.length;
+  const dupCount = dupRows.length;
+
+  _hideBatchPreview();
+
+  const visibleMeta = metaHeaders.slice(0, 3);
+  const dupBadge = dupCount > 0
+    ? `<span class="batch-badge dup">${dupCount} duplicate${dupCount !== 1 ? 's' : ''}</span>` : '';
+
+  // Нові спочатку, дублікати знизу
+  const allRows = [...newRows, ...dupRows];
+  const tbodyHtml = allRows.map(r => {
+    const isDup = existingNorms.has(r.raw.toLowerCase());
+    const dupBadgeCell = isDup ? '<span class="batch-dup-badge">DUP</span>' : '';
+    const metaTds = visibleMeta.map(h => {
+      const v = r.meta[h];
+      const disp = (v !== null && v !== undefined) ? formatDisplayValue(v, isPercentCol(h)) : '—';
+      return `<td class="batch-td batch-td-meta">${escHtml(disp)}</td>`;
+    }).join('');
+    return `<tr class="batch-row${isDup ? ' is-dup' : ''}">
+      <td class="batch-td batch-td-kw">${escHtml(r.raw)}${dupBadgeCell}</td>
+      ${metaTds}
+    </tr>`;
+  }).join('');
+
+  const theadHtml = `<thead><tr>
+    <th class="batch-th batch-th-kw">Keyword</th>
+    ${visibleMeta.map(h => `<th class="batch-th batch-th-meta">${escHtml(h)}</th>`).join('')}
+  </tr></thead>`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'batch-overlay';
+  overlay.id = 'batch-modal-overlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) cancelBatch(); });
+
+  overlay.innerHTML = `<div class="batch-modal">
+    <div class="batch-modal-head">
+      <span class="batch-modal-title">Keywords to add</span>
+      <span class="batch-badge new">+${newCount} new</span>
+      ${dupBadge}
+    </div>
+    <div class="batch-modal-body">
+      <table class="batch-table">${theadHtml}<tbody>${tbodyHtml}</tbody></table>
+    </div>
+    <div class="batch-modal-foot">
+      <button class="batch-btn-add" onclick="confirmBatch()" ${!newCount ? 'disabled' : ''}>
+        ✓ Add ${newCount} keyword${newCount !== 1 ? 's' : ''}
+      </button>
+      <button class="batch-btn-cancel" onclick="cancelBatch()">✕ Cancel</button>
+    </div>
+  </div>`;
+
+  document.body.appendChild(overlay);
+}
+
+function _hideBatchPreview() {
+  const el = document.getElementById('batch-modal-overlay');
+  if (el) el.remove();
+}
+
+function confirmBatch() {
+  if (!_pendingBatchText) return;
+  const parsed = _parseBatchFull(_pendingBatchText);
+  _pendingBatchText = null;
+  _hideBatchPreview();
+  if (!parsed.rows.length) return;
+
+  // Мержимо нові meta колонки
+  for (const h of parsed.metaHeaders) {
+    if (!metaColumns.find(mc => mc.header === h))
+      metaColumns.push({ header: h, isPercent: isPercentCol(h) });
+  }
+
+  // Мержимо кейворди напряму у keywords[] без перепарсингу textarea
+  const existingMap = new Map(keywords.map(k => [k.raw.toLowerCase(), k]));
+  let added = 0;
+  for (const { raw, meta } of parsed.rows) {
+    const norm = raw.toLowerCase();
+    if (existingMap.has(norm)) {
+      // Доповнюємо meta існуючого (нові поля, не перезаписуємо)
+      const ex = existingMap.get(norm);
+      for (const [k, v] of Object.entries(meta))
+        if (ex.meta[k] === undefined || ex.meta[k] === null) ex.meta[k] = v;
+    } else {
+      const kw = { raw, meta, status: 'notfound', wordStatuses: [], importOrder: keywords.length + added + 1 };
+      keywords.push(kw);
+      existingMap.set(norm, kw);
+      added++;
+    }
+  }
+
+  // Оновлюємо textarea — тільки plain список кейвордів
+  document.getElementById('kw-input').value = keywords.map(k => k.raw).join('\n');
+  updateSortDropdown();
+  runAnalysis();
+  showToast(`✓ Added ${added} keyword${added !== 1 ? 's' : ''}`);
+}
+
+function cancelBatch() {
+  _pendingBatchText = null;
+  _hideBatchPreview();
+}
+
+// ═══════════════════════════════════════════════════
+// LOCALSTORAGE PERSISTENCE
+// ═══════════════════════════════════════════════════
+const LS_KEY = 'kwchecker_v1';
+
+function saveState() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      kwInput: document.getElementById('kw-input').value,
+      textInput: document.getElementById('text-input').value,
+      oldTextInput: document.getElementById('old-text-input').value,
+      sort: document.getElementById('sort-select').value,
+      theme: document.body.classList.contains('theme-light') ? 'light' : 'dark',
+      compareMode: compareMode,
+      metaColumns: metaColumns,
+      keywords: keywords.map(k => ({ raw: k.raw, meta: k.meta, importOrder: k.importOrder })),
+      bulletTexts: bulletTexts,
+      descriptionText: descriptionText,
+    }));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+
+    // Theme
+    if (s.theme === 'light' && !document.body.classList.contains('theme-light')) {
+      document.body.classList.add('theme-light');
+      const lbl = document.getElementById('theme-label');
+      if (lbl) lbl.textContent = t('theme_dark');
+    }
+
+    // Meta columns
+    if (Array.isArray(s.metaColumns) && s.metaColumns.length) metaColumns = s.metaColumns;
+
+    // Keywords — відновлюємо повний масив з meta якщо є, інакше парсимо textarea
+    if (Array.isArray(s.keywords) && s.keywords.length) {
+      keywords = s.keywords.map(k => ({
+        raw: k.raw, meta: k.meta || {}, importOrder: k.importOrder ?? 0,
+        status: 'notfound', wordStatuses: [],
+      }));
+      if (s.kwInput) document.getElementById('kw-input').value = s.kwInput;
+      updateSortDropdown();
+    } else if (s.kwInput) {
+      document.getElementById('kw-input').value = s.kwInput;
+      keywords = parseKeywords(s.kwInput);
+      updateSortDropdown();
+    }
+
+    // Sort (after updateSortDropdown so dynamic options exist)
+    if (s.sort) {
+      const sel = document.getElementById('sort-select');
+      const vals = [...sel.options].map(o => o.value);
+      if (vals.includes(s.sort)) sel.value = s.sort;
+    }
+
+    // Text input
+    if (s.textInput) {
+      const ta = document.getElementById('text-input');
+      ta.value = s.textInput;
+      autoResizeTA(ta);
+    }
+
+    // Old text input
+    if (s.oldTextInput) {
+      const ta = document.getElementById('old-text-input');
+      ta.value = s.oldTextInput;
+      autoResizeTA(ta);
+    }
+
+    // Compare mode
+    if (s.compareMode) {
+      compareMode = true;
+      document.getElementById('compare-btn').classList.add('active');
+      document.getElementById('pane-old').style.display = '';
+    }
+
+    // Bullet texts
+    if (Array.isArray(s.bulletTexts)) {
+      bulletTexts = s.bulletTexts.slice(0, 5).map(v => v || '');
+      while (bulletTexts.length < 5) bulletTexts.push('');
+    }
+
+    // Description
+    if (s.descriptionText) {
+      descriptionText = s.descriptionText;
+      const dta = document.getElementById('desc-ta');
+      if (dta) { dta.value = descriptionText; setTimeout(() => autoResizeTA(dta), 0); }
+    }
+
+    // Run analysis to rebuild all state
+    if (keywords.length || document.getElementById('text-input').value) runAnalysis();
+    updateCharCount();
+    if (s.compareMode) runOldAnalysis();
+    renderBulletInputs();
+
+  } catch(e) { console.warn('State restore failed:', e); }
+}
+
+// ═══════════════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════════════
+function onKwInput() {
+  clearTimeout(kwDebounce);
+  kwDebounce=setTimeout(()=>{
+    keywords=parseKeywords(document.getElementById('kw-input').value);
+    updateSortDropdown();
+    // Sync textarea back to plain keyword list (strip meta columns so textarea stays clean)
+    // Only sync if format was table/pipe — to avoid cursor jump on plain typing
+    const raw = document.getElementById('kw-input').value;
+    const fmt = detectTextareaFormat(raw);
+    if (fmt === 'table' || fmt === 'pipe') {
+      document.getElementById('kw-input').value = keywords.map(k=>k.raw).join('\n');
+    }
+    runAnalysis();
+  }, 400);
+}
+function autoResizeTA(ta) { ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; }
+function onTextInput() { clearTimeout(textDebounce);textDebounce=setTimeout(runAnalysis,200);updateCharCount();autoResizeTA(document.getElementById('text-input')); }
+
+document.getElementById('kw-input').addEventListener('input', onKwInput);
+const textTa=document.getElementById('text-input');
+textTa.addEventListener('input',onTextInput);
+textTa.addEventListener('keyup',updateCharCount);
+textTa.addEventListener('mouseup',updateCharCount);
+textTa.addEventListener('focus',()=>{ _textTaFocused=true; updateCharCount(); });
+textTa.addEventListener('blur',()=>{ _textTaFocused=false; updateCharCount(); });
+document.addEventListener('selectionchange',()=>{if(document.activeElement===textTa)updateCharCount();});
+updateCharCount();
+
+const oldTa = document.getElementById('old-text-input');
+oldTa.addEventListener('input', onOldTextInput);
+oldTa.addEventListener('blur', () => {
+  const el = document.getElementById('old-char-count');
+  el.textContent = oldTa.value.length + ' chars';
+  el.classList.toggle('counting', oldTa.value.length > 0);
+});
+
+// Save sort preference
+document.getElementById('sort-select').addEventListener('change', saveState);
+
+// Delegated click on kw-list — reads raw keyword from data attribute (safe, no XSS)
+document.getElementById('kw-list').addEventListener('click', function(e) {
+  const chip = e.target.closest('.kw-chip');
+  if (!chip || e.target.closest('.kw-del')) return;
+  copyKeyword(chip.dataset.kwRaw);
+});
+
+// Batch paste handler
+document.getElementById('kw-input').addEventListener('paste', function(e) {
+  const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+  if (!pastedText || !pastedText.trim()) return;
+  const parsed = _parseBatchFull(pastedText.trim());
+  if (parsed.rows.length < 2) return; // single keyword — let native paste handle
+  e.preventDefault();
+  _pendingBatchText = pastedText.trim();
+  const existingNorms = new Set(keywords.map(k => k.raw.toLowerCase()));
+  _showBatchPreview(parsed, existingNorms);
+});
+
+// Restore saved state on load — replaced by initApp() below
+
+// ═══════════════════════════════════════════════════
+// AUTH + PROJECTS: CONSTANTS & STATE
+// ═══════════════════════════════════════════════════
+const API_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000/api'
+  : '/api';
+let _authToken = localStorage.getItem('kwchecker_token') || null;
+let _currentProjectId = null;
+let _currentProjectName = null;
+let _saveDebounce = null;
+let _serverOnline = null; // null=unknown, true/false
+
+// ═══════════════════════════════════════════════════
+// API FETCH HELPER
+// ═══════════════════════════════════════════════════
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API_BASE + path, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(_authToken ? { 'Authorization': 'Bearer ' + _authToken } : {}),
+    },
+    ...opts,
+  });
+  if (res.status === 401) {
+    _authToken = null;
+    localStorage.removeItem('kwchecker_token');
+    setLoggedOut();
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || res.statusText);
+  }
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════
+// SAVE / LOAD STATE (replaces localStorage-only versions)
+// ═══════════════════════════════════════════════════
+function saveState() {
+  // Always persist theme + fallback data locally
+  try {
+    const localPayload = {
+      kwInput: document.getElementById('kw-input').value,
+      textInput: document.getElementById('text-input').value,
+      oldTextInput: document.getElementById('old-text-input').value,
+      sort: document.getElementById('sort-select').value,
+      theme: document.body.classList.contains('theme-light') ? 'light' : 'dark',
+      compareMode: compareMode,
+      metaColumns: metaColumns,
+      keywords: keywords.map(k => ({ raw: k.raw, meta: k.meta, importOrder: k.importOrder })),
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(localPayload));
+  } catch(e) {}
+
+  // API save (only when logged in with a project selected)
+  if (!_authToken || !_currentProjectId || _serverOnline === false) return;
+  clearTimeout(_saveDebounce);
+  _saveDebounce = setTimeout(async () => {
+    try {
+      const payload = {
+        kw_input:       document.getElementById('kw-input').value,
+        text_input:     document.getElementById('text-input').value,
+        old_text_input: document.getElementById('old-text-input').value,
+        sort:           document.getElementById('sort-select').value,
+        theme:          document.body.classList.contains('theme-light') ? 'light' : 'dark',
+        compare_mode:   compareMode ? 1 : 0,
+        meta_columns:   JSON.stringify(metaColumns),
+        keywords:       JSON.stringify(keywords.map(k => ({ raw: k.raw, meta: k.meta, importOrder: k.importOrder }))),
+        bullet_texts:      JSON.stringify(bulletTexts),
+        description_text:  descriptionText,
+      };
+      await apiFetch(`/projects/${_currentProjectId}/data`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+    } catch(e) { console.warn('API save failed (offline?):', e.message); }
+  }, 800);
+}
+
+async function loadStateFromAPI(projectId) {
+  const res = await apiFetch(`/projects/${projectId}/data`);
+  const s = res.data;
+
+  // Theme
+  if (s.theme === 'light' && !document.body.classList.contains('theme-light')) {
+    document.body.classList.add('theme-light');
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = t('theme_dark');
+  } else if (s.theme === 'dark' && document.body.classList.contains('theme-light')) {
+    document.body.classList.remove('theme-light');
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = t('theme_light');
+  }
+
+  // Meta columns
+  try {
+    const mc = typeof s.meta_columns === 'string' ? JSON.parse(s.meta_columns) : s.meta_columns;
+    if (Array.isArray(mc) && mc.length) metaColumns = mc;
+  } catch(e) {}
+
+  // Keywords
+  try {
+    const kws = typeof s.keywords === 'string' ? JSON.parse(s.keywords) : s.keywords;
+    if (Array.isArray(kws) && kws.length) {
+      keywords = kws.map(k => ({
+        raw: k.raw, meta: k.meta || {}, importOrder: k.importOrder ?? 0,
+        status: 'notfound', wordStatuses: [],
+      }));
+      if (s.kw_input) document.getElementById('kw-input').value = s.kw_input;
+      updateSortDropdown();
+    } else if (s.kw_input) {
+      document.getElementById('kw-input').value = s.kw_input;
+      keywords = parseKeywords(s.kw_input);
+      updateSortDropdown();
+    } else {
+      keywords = [];
+      document.getElementById('kw-input').value = '';
+      updateSortDropdown();
+    }
+  } catch(e) {}
+
+  // Sort
+  if (s.sort) {
+    const sel = document.getElementById('sort-select');
+    const vals = [...sel.options].map(o => o.value);
+    if (vals.includes(s.sort)) sel.value = s.sort;
+  }
+
+  // Text inputs
+  const textTaEl = document.getElementById('text-input');
+  textTaEl.value = s.text_input || '';
+  autoResizeTA(textTaEl);
+
+  const oldTaEl = document.getElementById('old-text-input');
+  oldTaEl.value = s.old_text_input || '';
+  autoResizeTA(oldTaEl);
+
+  // Compare mode
+  const cm = s.compare_mode === 1 || s.compare_mode === true;
+  compareMode = cm;
+  const cmpBtn = document.getElementById('compare-btn');
+  if (cmpBtn) cmpBtn.classList.toggle('active', cm);
+  const paneOld = document.getElementById('pane-old');
+  if (paneOld) paneOld.style.display = cm ? '' : 'none';
+
+  // Bullet texts
+  try {
+    const bt = typeof s.bullet_texts === 'string' ? JSON.parse(s.bullet_texts) : s.bullet_texts;
+    if (Array.isArray(bt)) {
+      bulletTexts = bt.slice(0, 5).map(v => v || '');
+      while (bulletTexts.length < 5) bulletTexts.push('');
+    }
+  } catch(e) {}
+
+  // Description
+  descriptionText = s.description_text || '';
+  const dta = document.getElementById('desc-ta');
+  if (dta) { dta.value = descriptionText; setTimeout(() => autoResizeTA(dta), 0); }
+
+  // Run analysis
+  if (keywords.length || textTaEl.value) runAnalysis();
+  updateCharCount();
+  if (cm) runOldAnalysis();
+  renderBulletInputs();
+}
+
+function loadState() {
+  // Classic localStorage restore (used in guest mode)
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+
+    if (s.theme === 'light' && !document.body.classList.contains('theme-light')) {
+      document.body.classList.add('theme-light');
+      const lbl = document.getElementById('theme-label');
+      if (lbl) lbl.textContent = t('theme_dark');
+    }
+    if (Array.isArray(s.metaColumns) && s.metaColumns.length) metaColumns = s.metaColumns;
+    if (Array.isArray(s.keywords) && s.keywords.length) {
+      keywords = s.keywords.map(k => ({
+        raw: k.raw, meta: k.meta || {}, importOrder: k.importOrder ?? 0,
+        status: 'notfound', wordStatuses: [],
+      }));
+      if (s.kwInput) document.getElementById('kw-input').value = s.kwInput;
+      updateSortDropdown();
+    } else if (s.kwInput) {
+      document.getElementById('kw-input').value = s.kwInput;
+      keywords = parseKeywords(s.kwInput);
+      updateSortDropdown();
+    }
+    if (s.sort) {
+      const sel = document.getElementById('sort-select');
+      const vals = [...sel.options].map(o => o.value);
+      if (vals.includes(s.sort)) sel.value = s.sort;
+    }
+    if (s.textInput) {
+      const ta = document.getElementById('text-input');
+      ta.value = s.textInput;
+      autoResizeTA(ta);
+    }
+    if (s.oldTextInput) {
+      const ta = document.getElementById('old-text-input');
+      ta.value = s.oldTextInput;
+      autoResizeTA(ta);
+    }
+    if (s.compareMode) {
+      compareMode = true;
+      document.getElementById('compare-btn').classList.add('active');
+      document.getElementById('pane-old').style.display = '';
+    }
+    if (keywords.length || document.getElementById('text-input').value) runAnalysis();
+    updateCharCount();
+    if (s.compareMode) runOldAnalysis();
+  } catch(e) { console.warn('State restore failed:', e); }
+}
+
+// ═══════════════════════════════════════════════════
+// AUTH UI HELPERS
+// ═══════════════════════════════════════════════════
+function setLoggedIn(user) {
+  document.getElementById('auth-logged-out').style.display = 'none';
+  document.getElementById('auth-logged-in').style.display = 'flex';
+  document.getElementById('auth-username').textContent = user.display_name || user.email;
+  document.getElementById('project-bar').style.display = 'flex';
+}
+
+function setLoggedOut() {
+  document.getElementById('auth-logged-out').style.display = 'flex';
+  document.getElementById('auth-logged-in').style.display = 'none';
+  document.getElementById('project-bar').style.display = 'none';
+  _currentProjectId = null;
+  _currentProjectName = null;
+}
+
+function logout() {
+  _authToken = null;
+  localStorage.removeItem('kwchecker_token');
+  setLoggedOut();
+  showToast('Logged out');
+}
+
+// ═══════════════════════════════════════════════════
+// AUTH MODAL
+// ═══════════════════════════════════════════════════
+function showAuthModal(tab) {
+  _switchAuthTab(tab || 'login');
+  document.getElementById('auth-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('auth-email').focus(), 50);
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal').style.display = 'none';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+  document.getElementById('auth-name').value = '';
+}
+
+function _switchAuthTab(tab) {
+  const isReg = tab === 'register';
+  document.getElementById('auth-tab-login').classList.toggle('active', !isReg);
+  document.getElementById('auth-tab-register').classList.toggle('active', isReg);
+  document.getElementById('register-name-row').style.display = isReg ? 'block' : 'none';
+  document.getElementById('auth-submit-btn').textContent = isReg ? 'Register' : 'Log In';
+  document.getElementById('auth-modal-title').textContent = isReg ? 'Create Account' : 'Log In';
+  document.getElementById('auth-modal').dataset.tab = tab;
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+function switchAuthTab(tab) { _switchAuthTab(tab); }
+
+async function submitAuth() {
+  const tab = document.getElementById('auth-modal').dataset.tab || 'login';
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const name     = document.getElementById('auth-name').value.trim();
+  const errEl    = document.getElementById('auth-error');
+
+  if (!email || !password) {
+    errEl.textContent = 'Please fill in all fields.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('auth-submit-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
+  errEl.style.display = 'none';
+
+  try {
+    const body = tab === 'register'
+      ? { email, password, display_name: name }
+      : { email, password };
+    const res = await apiFetch(`/auth/${tab}`, { method: 'POST', body: JSON.stringify(body) });
+    _authToken = res.token;
+    localStorage.setItem('kwchecker_token', _authToken);
+    setLoggedIn(res.user);
+    closeAuthModal();
+    await _afterLogin();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = tab === 'register' ? 'Register' : 'Log In';
+  }
+}
+
+// Enter key on auth modal inputs
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeAuthModal();
+    closeProjectModal();
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// PROJECTS
+// ═══════════════════════════════════════════════════
+async function loadProjects() {
+  const res = await apiFetch('/projects');
+  const sel = document.getElementById('project-select');
+  sel.innerHTML = res.projects.map(p =>
+    `<option value="${p.id}">${_escHtml(p.name)}</option>`
+  ).join('');
+  if (res.projects.length > 0) {
+    _currentProjectId = res.projects[0].id;
+    _currentProjectName = res.projects[0].name;
+    sel.value = _currentProjectId;
+    await loadStateFromAPI(_currentProjectId);
+  } else {
+    // No projects yet — show empty state
+    keywords = []; metaColumns = [];
+    document.getElementById('kw-input').value = '';
+    document.getElementById('text-input').value = '';
+    runAnalysis();
+  }
+  // Disable delete btn if only 1 project
+  _updateDeleteBtn(res.projects.length);
+}
+
+function _updateDeleteBtn(count) {
+  const btn = document.getElementById('delete-project-btn');
+  if (!btn) return;
+  btn.disabled = count <= 1;
+  btn.title = count <= 1 ? 'Cannot delete the last project' : 'Delete project';
+}
+
+async function onProjectSwitch() {
+  const sel = document.getElementById('project-select');
+  const pid = parseInt(sel.value);
+  if (pid === _currentProjectId) return;
+  _currentProjectId = pid;
+  _currentProjectName = sel.options[sel.selectedIndex].text;
+  keywords = []; metaColumns = [];
+  bulletTexts = ['', '', '', '', ''];
+  descriptionText = '';
+  const _dta = document.getElementById('desc-ta');
+  if (_dta) _dta.value = '';
+  document.getElementById('kw-input').value = '';
+  document.getElementById('text-input').value = '';
+  document.getElementById('old-text-input').value = '';
+  await loadStateFromAPI(pid);
+}
+
+// After login: migrate localStorage if no projects exist
+async function _afterLogin() {
+  const res = await apiFetch('/projects');
+  if (res.projects.length === 0) {
+    // Try to migrate existing localStorage data
+    const raw = localStorage.getItem(LS_KEY);
+    const s = raw ? JSON.parse(raw) : null;
+    const hasData = s && (s.kwInput || (Array.isArray(s.keywords) && s.keywords.length));
+    const projName = hasData ? 'Default' : 'Project 1';
+
+    const created = await apiFetch('/projects', { method: 'POST', body: JSON.stringify({ name: projName }) });
+    _currentProjectId = created.project.id;
+    _currentProjectName = created.project.name;
+
+    if (hasData) {
+      // Push existing localStorage data to server
+      const payload = {
+        kw_input:       s.kwInput || '',
+        text_input:     s.textInput || '',
+        old_text_input: s.oldTextInput || '',
+        sort:           s.sort || 'import',
+        theme:          s.theme || 'dark',
+        compare_mode:   s.compareMode ? 1 : 0,
+        meta_columns:   JSON.stringify(s.metaColumns || []),
+        keywords:       JSON.stringify((s.keywords || []).map(k => ({ raw: k.raw, meta: k.meta, importOrder: k.importOrder }))),
+      };
+      await apiFetch(`/projects/${_currentProjectId}/data`, { method: 'PUT', body: JSON.stringify(payload) });
+      showToast('Migrated your data to project "' + projName + '"');
+    }
+
+    const sel = document.getElementById('project-select');
+    sel.innerHTML = `<option value="${created.project.id}">${_escHtml(created.project.name)}</option>`;
+    _updateDeleteBtn(1);
+    await loadStateFromAPI(_currentProjectId);
+  } else {
+    await loadProjects();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// PROJECT MODAL (new + rename)
+// ═══════════════════════════════════════════════════
+let _projectModalMode = 'new';
+
+function showProjectModal(mode) {
+  _projectModalMode = mode;
+  const isRename = mode === 'rename';
+  document.getElementById('project-modal-title').textContent = isRename ? 'Rename Project' : 'New Project';
+  document.getElementById('project-modal-confirm').textContent = isRename ? 'Rename' : 'Create';
+  const inp = document.getElementById('project-name-input');
+  inp.value = isRename ? (_currentProjectName || '') : '';
+  document.getElementById('project-name-modal').style.display = 'flex';
+  setTimeout(() => { inp.focus(); inp.select(); }, 50);
+}
+
+function closeProjectModal() {
+  document.getElementById('project-name-modal').style.display = 'none';
+}
+
+async function confirmProjectName() {
+  const name = document.getElementById('project-name-input').value.trim();
+  if (!name) return;
+  const btn = document.getElementById('project-modal-confirm');
+  btn.disabled = true;
+  try {
+    if (_projectModalMode === 'new') {
+      const res = await apiFetch('/projects', { method: 'POST', body: JSON.stringify({ name }) });
+      _currentProjectId = res.project.id;
+      _currentProjectName = res.project.name;
+      // Reload project list
+      const listRes = await apiFetch('/projects');
+      const sel = document.getElementById('project-select');
+      sel.innerHTML = listRes.projects.map(p => `<option value="${p.id}">${_escHtml(p.name)}</option>`).join('');
+      sel.value = _currentProjectId;
+      _updateDeleteBtn(listRes.projects.length);
+      // Clear checker state for new project
+      keywords = []; metaColumns = [];
+      document.getElementById('kw-input').value = '';
+      document.getElementById('text-input').value = '';
+      document.getElementById('old-text-input').value = '';
+      runAnalysis();
+      showToast(`Project "${name}" created`);
+    } else {
+      await apiFetch(`/projects/${_currentProjectId}`, { method: 'PATCH', body: JSON.stringify({ name }) });
+      _currentProjectName = name;
+      const sel = document.getElementById('project-select');
+      const opt = sel.querySelector(`option[value="${_currentProjectId}"]`);
+      if (opt) opt.textContent = name;
+      showToast(`Renamed to "${name}"`);
+    }
+    closeProjectModal();
+  } catch(e) {
+    showToast(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function deleteCurrentProject() {
+  if (!_currentProjectId) return;
+  const btn = document.getElementById('delete-project-btn');
+  // Two-click confirm
+  if (!btn.dataset.confirming) {
+    btn.dataset.confirming = '1';
+    btn.textContent = 'Sure?';
+    btn.style.color = 'var(--notfound)';
+    btn.style.borderColor = 'var(--notfound)';
+    setTimeout(() => {
+      btn.dataset.confirming = '';
+      btn.textContent = 'Delete';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 3000);
+    return;
+  }
+  btn.dataset.confirming = '';
+  btn.textContent = 'Delete';
+  btn.style.color = '';
+  btn.style.borderColor = '';
+  try {
+    await apiFetch(`/projects/${_currentProjectId}`, { method: 'DELETE' });
+    showToast('Project deleted');
+    await loadProjects();
+  } catch(e) { showToast(e.message); }
+}
+
+// ═══════════════════════════════════════════════════
+// PROJECT NAME MODAL: Enter key
+// ═══════════════════════════════════════════════════
+document.getElementById('project-name-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') confirmProjectName();
+});
+document.getElementById('auth-password').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') submitAuth();
+});
+document.getElementById('auth-email').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') submitAuth();
+});
+
+// ═══════════════════════════════════════════════════
+// INIT APP
+// ═══════════════════════════════════════════════════
+function _escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function initApp() {
+  // Phase 1: instant — restore local state so page is usable immediately
+  setLoggedOut();
+  loadState();
+  renderBulletInputs(); // always show bullet inputs even with no saved state
+  _initDescTextarea();  // wire up description textarea
+
+  // Phase 2: background — validate token & switch to logged-in mode if valid
+  // Uses setTimeout(0) so it runs after the current call stack clears,
+  // avoiding any page-load network-timing issues.
+  setTimeout(async () => {
+    if (!_authToken) {
+      // No token — just detect server availability for saveState
+      fetch(API_BASE + '/auth/me', { method: 'GET' })
+        .then(() => { _serverOnline = true; })
+        .catch(() => { _serverOnline = false; });
+      return;
+    }
+    try {
+      const raw = await fetch(API_BASE + '/auth/me', {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + _authToken },
+      });
+      _serverOnline = true;
+      if (!raw.ok) {
+        // 401 — token expired/invalid, stay in guest mode
+        _authToken = null;
+        localStorage.removeItem('kwchecker_token');
+        return;
+      }
+      const res = await raw.json();
+      setLoggedIn(res.user);
+      await loadProjects(); // replaces localStorage content with project data
+    } catch(e) {
+      // Server unreachable — stay in guest mode with local data intact
+      _serverOnline = false;
+    }
+  }, 100);
+}
+
+initApp();
+
+// ═══════════════════════════════════════════════════
+// MOBILE TITLE PREVIEW
+// ═══════════════════════════════════════════════════
+function toggleMobilePreview() {
+  mobilePreviewOpen = !mobilePreviewOpen;
+  const body = document.getElementById('mobile-preview-body');
+  const icon = document.getElementById('mobile-preview-toggle-icon');
+  if (body) body.classList.toggle('open', mobilePreviewOpen);
+  if (icon) icon.classList.toggle('open', mobilePreviewOpen);
+  if (mobilePreviewOpen) updateMobilePreview();
+}
+
+function updateMobilePreview() {
+  const text = document.getElementById('text-input').value;
+  const charInfo = document.getElementById('mobile-char-info');
+
+  // Always update the header badge
+  const len = text.length;
+  if (charInfo) {
+    if (!text) {
+      charInfo.textContent = '';
+    } else {
+      charInfo.textContent = len + ' chars' + (len > MOBILE_CUTOFF ? ' (\u26a0 truncated)' : ' \u2713');
+      charInfo.style.color = len > MOBILE_CUTOFF ? 'var(--notfound)' : 'var(--exact)';
+    }
+  }
+
+  // Only render content when open
+  if (!mobilePreviewOpen) return;
+
+  const preview = document.getElementById('mobile-preview');
+  const warnEl = document.getElementById('mobile-warn');
+  if (!preview) return;
+
+  if (!text) {
+    preview.innerHTML = '<span class="preview-empty">Mobile preview will appear here...</span>';
+    if (warnEl) warnEl.innerHTML = '';
+    return;
+  }
+
+  // Render visible portion with highlights, fade the rest
+  const visible = text.slice(0, MOBILE_CUTOFF);
+  const hidden  = text.slice(MOBILE_CUTOFF);
+  const clampedSpans = _cachedAllSpans
+    .filter(s => s.start < MOBILE_CUTOFF)
+    .map(s => ({ ...s, end: Math.min(s.end, MOBILE_CUTOFF) }));
+
+  let html = visible.length
+    ? (clampedSpans.length ? _renderSpansToHtml(visible, clampedSpans, false) : escHtml(visible))
+    : '';
+  if (hidden) {
+    html += '<span class="mobile-cutoff-line"></span><span class="mobile-fade">' + escHtml(hidden) + '</span>';
+  }
+  preview.innerHTML = html;
+
+  // Warnings
+  const warns = [];
+  if (len > MOBILE_CUTOFF) {
+    warns.push({ cls: 'mobile-warn-chip', text: 'Truncated — ' + (len - MOBILE_CUTOFF) + ' chars hidden on mobile' });
+    const beyond = keywords.filter(kw =>
+      kw.status !== 'notfound' &&
+      _cachedAllSpans.some(s => s.start >= MOBILE_CUTOFF)
+    ).length;
+    if (beyond) warns.push({ cls: 'mobile-warn-chip', text: beyond + ' keyword match' + (beyond > 1 ? 'es' : '') + ' beyond cutoff' });
+  } else {
+    warns.push({ cls: 'mobile-ok-chip', text: '\u2713 Fits mobile (' + len + '\u202f/\u202f' + MOBILE_CUTOFF + ')' });
+  }
+  if (warnEl) warnEl.innerHTML = warns.map(w => '<span class="' + w.cls + '">' + w.text + '</span>').join('');
+}
+
+// ═══════════════════════════════════════════════════
+// POLICY CHECKER
+// ═══════════════════════════════════════════════════
+function runPolicyCheck() {
+  const text = document.getElementById('text-input').value;
+  const panel = document.getElementById('policy-panel');
+  const chipsEl = document.getElementById('policy-chips');
+  if (!panel || !chipsEl) return;
+  const html = _getPolicyChipsHtml(text);
+  chipsEl.innerHTML = html;
+  panel.classList.toggle('open', html.length > 0);
+}
+
+// ═══════════════════════════════════════════════════
+// BULLET POINTS ANALYZER
+// ═══════════════════════════════════════════════════
+function toggleBulletsSection() {
+  bulletsOpen = !bulletsOpen;
+  const body = document.getElementById('bullets-body');
+  const icon = document.getElementById('bullets-toggle-icon');
+  if (body) body.classList.toggle('open', bulletsOpen);
+  if (icon) icon.classList.toggle('open', bulletsOpen);
+  if (bulletsOpen) renderBulletInputs();
+}
+
+function renderBulletInputs() {
+  const container = document.getElementById('bullets-inputs');
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const row = document.createElement('div');
+    row.className = 'bullet-row';
+    row.innerHTML =
+      '<div class="bullet-row-meta" id="bullet-meta-' + i + '">' +
+        '<span class="bullet-num">B' + (i + 1) + '</span>' +
+      '</div>' +
+      '<textarea class="bullet-ta" id="bullet-ta-' + i + '" placeholder="Bullet point ' + (i + 1) + ' (max ' + BULLET_CHAR_LIMIT + ' chars)..." rows="2">' +
+        escHtml(bulletTexts[i]) +
+      '</textarea>' +
+      '<div class="preview-pane" id="bullet-preview-' + i + '" style="display:none;font-size:13px;min-height:0;padding:8px 12px;line-height:1.6;"></div>' +
+      '<div id="bullet-policy-' + i + '" style="display:flex;flex-wrap:wrap;gap:4px;"></div>';
+    container.appendChild(row);
+    const ta = row.querySelector('textarea');
+    ta.addEventListener('input', () => {
+      bulletTexts[i] = ta.value;
+      autoResizeTA(ta);
+      runBulletAnalysis();
+      saveState();
+    });
+    setTimeout(() => autoResizeTA(ta), 0);
+  }
+  runBulletAnalysis();
+}
+
+function runBulletAnalysis() {
+  const savedStream  = _cachedTokenStream;
+  const savedStemSet = _cachedStemSet;
+  const savedText    = _cachedText;
+
+  const bulletResults = bulletTexts.map(bt => {
+    if (!bt.trim()) return null;
+    _cachedTokenStream = null;
+    _cachedStemSet = null;
+    _cachedText = bt;
+    const matched = [];
+    const allSpans = [];
+    keywords.forEach(kw => {
+      const { status, spans } = checkKeyword(bt, kw.raw);
+      if (status !== 'notfound') matched.push({ raw: kw.raw, status });
+      allSpans.push(...spans);
+    });
+    const mergedSpans = keywords.length ? mergeSpans(allSpans) : [];
+    return { text: bt, matched, mergedSpans, charLen: bt.length };
+  });
+
+  _cachedTokenStream = savedStream;
+  _cachedStemSet = savedStemSet;
+  _cachedText = savedText;
+
+  _renderBulletStats(bulletResults, keywords);
+}
+
+function _renderBulletStats(results, kws) {
+  const aggEl = document.getElementById('bullets-agg');
+
+  for (let i = 0; i < 5; i++) {
+    const metaEl    = document.getElementById('bullet-meta-' + i);
+    const previewEl = document.getElementById('bullet-preview-' + i);
+    const policyEl  = document.getElementById('bullet-policy-' + i);
+    if (!metaEl) continue;
+
+    const r = results[i];
+    metaEl.innerHTML = '<span class="bullet-num">B' + (i + 1) + '</span>';
+
+    // Clear preview and policy when empty
+    if (!r) {
+      if (previewEl) previewEl.style.display = 'none';
+      if (policyEl)  policyEl.innerHTML = '';
+      continue;
+    }
+
+    // Char count chip
+    const charCls = r.charLen > BULLET_CHAR_LIMIT ? 'over' : 'chars';
+    metaEl.innerHTML += '<span class="bullet-chip ' + charCls + '">' + r.charLen + '\u202f/\u202f' + BULLET_CHAR_LIMIT + '</span>';
+
+    // Keyword match chip
+    if (kws.length) {
+      if (r.matched.length) {
+        const pct = Math.round(r.matched.length / kws.length * 100);
+        metaEl.innerHTML += '<span class="bullet-chip kw">\u2713 ' + r.matched.length + '\u202f/\u202f' + kws.length + ' kw (' + pct + '%)</span>';
+      } else {
+        metaEl.innerHTML += '<span class="bullet-chip kw0">0 kw</span>';
+      }
+    }
+
+    // Mini preview with keyword highlights
+    if (previewEl) {
+      if (r.mergedSpans.length) {
+        previewEl.innerHTML = _renderSpansToHtml(r.text, r.mergedSpans, false);
+      } else {
+        previewEl.textContent = r.text;
+      }
+      previewEl.style.display = '';
+    }
+
+    // Policy chips
+    if (policyEl) {
+      policyEl.innerHTML = _getPolicyChipsHtml(r.text);
+    }
+  }
+
+  // Aggregate combined coverage
+  if (!aggEl) return;
+  const hasAny = results.some(r => r !== null);
+  if (!hasAny || !kws.length) { aggEl.style.display = 'none'; return; }
+
+  const allMatched = new Set();
+  results.forEach(r => { if (r) r.matched.forEach(m => allMatched.add(m.raw.toLowerCase())); });
+  const pct = Math.round(allMatched.size / kws.length * 100);
+
+  aggEl.style.display = 'flex';
+  aggEl.innerHTML =
+    '<span class="bullets-agg-label">Combined Coverage</span>' +
+    '<span class="bullet-chip kw">' + allMatched.size + '\u202f/\u202f' + kws.length + ' keywords (' + pct + '%)</span>';
+
+  const badge = document.getElementById('bullets-agg-badge');
+  if (badge) badge.textContent = allMatched.size + '/' + kws.length + ' kw\u202f·\u202f' + pct + '%';
+}
+
+// ═══════════════════════════════════════════════════
+// DESCRIPTION ANALYZER
+// ═══════════════════════════════════════════════════
+function _initDescTextarea() {
+  const ta = document.getElementById('desc-ta');
+  if (!ta || ta._descWired) return;
+  ta._descWired = true;
+  ta.addEventListener('input', () => {
+    descriptionText = ta.value;
+    autoResizeTA(ta);
+    updateDescAnalysis();
+    saveState();
+  });
+}
+
+function toggleDescSection() {
+  descOpen = !descOpen;
+  const body = document.getElementById('desc-body');
+  const icon = document.getElementById('desc-toggle-icon');
+  if (body) body.classList.toggle('open', descOpen);
+  if (icon) icon.classList.toggle('open', descOpen);
+  if (descOpen) {
+    _initDescTextarea();
+    updateDescAnalysis();
+    const ta = document.getElementById('desc-ta');
+    if (ta) setTimeout(() => autoResizeTA(ta), 0);
+  }
+}
+
+function updateDescAnalysis() {
+  const charInfoEl = document.getElementById('desc-char-info');
+  const metaEl     = document.getElementById('desc-meta');
+  const previewEl  = document.getElementById('desc-preview');
+  const policyEl   = document.getElementById('desc-policy');
+  const DESC_LIMIT = 2000;
+
+  // Header badge — always update
+  if (charInfoEl) {
+    if (!descriptionText) {
+      charInfoEl.textContent = '';
+    } else {
+      const len = descriptionText.length;
+      charInfoEl.textContent = len + ' / ' + DESC_LIMIT + (len > DESC_LIMIT ? ' \u26a0' : ' \u2713');
+      charInfoEl.style.color = len > DESC_LIMIT ? 'var(--notfound)' : 'var(--exact)';
+    }
+  }
+
+  // Only render full analysis when section is open
+  if (!descOpen) return;
+
+  // Meta chips
+  if (metaEl) {
+    if (!descriptionText) {
+      metaEl.innerHTML = '';
+    } else {
+      const len = descriptionText.length;
+      const charCls = len > DESC_LIMIT ? 'over' : 'chars';
+      let html = '<span class="bullet-chip ' + charCls + '">' + len + '\u202f/\u202f' + DESC_LIMIT + '</span>';
+      // keyword match count
+      if (keywords.length) {
+        const matched = _countDescMatches();
+        const pct = Math.round(matched / keywords.length * 100);
+        html += matched
+          ? '<span class="bullet-chip kw">\u2713 ' + matched + '\u202f/\u202f' + keywords.length + ' kw (' + pct + '%)</span>'
+          : '<span class="bullet-chip kw0">0 kw matched</span>';
+      }
+      metaEl.innerHTML = html;
+    }
+  }
+
+  // Preview with keyword highlights
+  if (previewEl) {
+    if (!descriptionText) {
+      previewEl.style.display = 'none';
+    } else {
+      previewEl.style.display = '';
+      const spans = _getSpansForText(descriptionText);
+      if (spans.length) {
+        previewEl.innerHTML = _renderSpansToHtml(descriptionText, spans, false);
+      } else {
+        previewEl.textContent = descriptionText;
+      }
+    }
+  }
+
+  // Policy check
+  if (policyEl) {
+    policyEl.innerHTML = descriptionText ? _getPolicyChipsHtml(descriptionText) : '';
+  }
+}
+
+function _countDescMatches() {
+  const saved = _cachedTokenStream;
+  _cachedTokenStream = null;
+  const savedText = _cachedText;
+  _cachedText = descriptionText;
+  let count = 0;
+  keywords.forEach(kw => {
+    const { status } = checkKeyword(descriptionText, kw.raw);
+    if (status !== 'notfound') count++;
+  });
+  _cachedTokenStream = saved;
+  _cachedText = savedText;
+  return count;
+}
+
+// ── Shared helpers ─────────────────────────────────
+function _getSpansForText(text) {
+  // Run keyword matching on arbitrary text, return merged spans
+  const savedStream = _cachedTokenStream;
+  const savedText   = _cachedText;
+  _cachedTokenStream = null;
+  _cachedText = text;
+  const allSpans = [];
+  keywords.forEach(kw => {
+    const { spans } = checkKeyword(text, kw.raw);
+    allSpans.push(...spans);
+  });
+  _cachedTokenStream = savedStream;
+  _cachedText = savedText;
+  return mergeSpans(allSpans);
+}
+
+function _getPolicyChipsHtml(text) {
+  const issues = [];
+  for (const w of FORBIDDEN_WORDS.promotional) {
+    const re = new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+    if (re.test(text)) issues.push({ cls: 'policy-chip', text: w });
+  }
+  for (const w of FORBIDDEN_WORDS.subjective) {
+    const re = new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+    if (re.test(text)) issues.push({ cls: 'policy-chip warn', text: w });
+  }
+  const specials = text.match(FORBIDDEN_WORDS.special_re) || [];
+  for (const m of [...new Set(specials)]) issues.push({ cls: 'policy-chip', text: m });
+  return issues.map(i => '<span class="' + i.cls + '">' + escHtml(i.text) + '</span>').join('');
+}
+
+// ═══════════════════════════════════════════════════
+// KEYWORD GROUPS / CLUSTERS
+// ═══════════════════════════════════════════════════
+function toggleClustersSection() {
+  clustersOpen = !clustersOpen;
+  const body = document.getElementById('clusters-body');
+  const icon = document.getElementById('clusters-toggle-icon');
+  if (body) body.classList.toggle('open', clustersOpen);
+  if (icon) icon.classList.toggle('open', clustersOpen);
+}
+
+function buildKwGroups() {
+  const body = document.getElementById('clusters-body');
+  const badge = document.getElementById('clusters-count-badge');
+  if (!body) return;
+
+  if (!keywords.length) {
+    body.innerHTML = '<span class="clusters-empty">Add keywords to see groups.</span>';
+    if (badge) badge.textContent = '';
+    return;
+  }
+
+  // Build stem → [kw] map
+  const stemMap = new Map(); // stem → Set of kw indices
+  keywords.forEach((kw, idx) => {
+    const words = kw.raw.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+    const stems = new Set(words.flatMap(w => [w, lemma(w)]).filter(s => s && !isStopWord(s) && s.length > 2));
+    stems.forEach(s => {
+      if (!stemMap.has(s)) stemMap.set(s, new Set());
+      stemMap.get(s).add(idx);
+    });
+  });
+
+  // Only keep stems that appear in 2+ keywords
+  const groupStems = [...stemMap.entries()]
+    .filter(([, idxSet]) => idxSet.size >= 2)
+    .sort((a, b) => b[1].size - a[1].size);
+
+  if (!groupStems.length) {
+    body.innerHTML = '<span class="clusters-empty">No shared stems found — add more keywords.</span>';
+    if (badge) badge.textContent = '';
+    return;
+  }
+
+  // Greedy dedup: a stem is shown only if it adds at least 1 new keyword index
+  const shown = [];
+  const seenPairs = new Set();
+  for (const [stem, idxSet] of groupStems) {
+    const pairKey = [...idxSet].sort().join(',');
+    if (seenPairs.has(pairKey)) continue;
+    seenPairs.add(pairKey);
+    shown.push({ stem, idxSet });
+    if (shown.length >= 12) break; // cap at 12 groups
+  }
+
+  let html = '';
+  for (const { stem, idxSet } of shown) {
+    const kws = [...idxSet].map(i => keywords[i]);
+    const kwChips = kws.map(kw => {
+      let cls = 'cluster-kw';
+      if (kw.status === 'fullexact' || kw.status === 'exact') cls += ' matched';
+      else if (kw.status === 'phrase' || kw.status === 'broad') cls += ' partial';
+      else if (kw.status === 'notfound') cls += ' notfound';
+      return '<span class="' + cls + '">' + escHtml(kw.raw) + '</span>';
+    }).join('');
+    html +=
+      '<div class="cluster-group">' +
+        '<div class="cluster-head">' +
+          '<span class="cluster-stem-label">' + escHtml(stem) + '</span>' +
+          '<span class="cluster-count">' + kws.length + '</span>' +
+        '</div>' +
+        '<div class="cluster-kws">' + kwChips + '</div>' +
+      '</div>';
+  }
+
+  body.innerHTML = html;
+  body.classList.toggle('open', clustersOpen);
+  if (badge) badge.textContent = shown.length + ' group' + (shown.length !== 1 ? 's' : '');
+}
+
+</script>
+
+<!-- Auth Modal -->
+<div class="batch-overlay" id="auth-modal" style="display:none;" onclick="if(event.target===this)closeAuthModal()">
+  <div class="batch-modal" style="max-width:380px;">
+    <div class="batch-modal-head">
+      <span class="batch-modal-title" id="auth-modal-title">Log In</span>
+      <div style="display:flex;gap:6px;margin-left:auto;">
+        <button id="auth-tab-login" class="batch-btn-add active" onclick="switchAuthTab('login')">Log In</button>
+        <button id="auth-tab-register" class="batch-btn-cancel" onclick="switchAuthTab('register')">Register</button>
+      </div>
+    </div>
+    <div class="batch-modal-body" style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+      <div id="auth-error" style="color:var(--notfound);font-size:12px;font-family:'JetBrains Mono',monospace;display:none;padding:6px 8px;background:var(--notfound-bg);border:1px solid var(--notfound-border);border-radius:5px;"></div>
+      <div id="register-name-row" style="display:none;">
+        <input id="auth-name" type="text" placeholder="Display name (optional)" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:7px 10px;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+      </div>
+      <div>
+        <input id="auth-email" type="email" placeholder="Email" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:7px 10px;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+      </div>
+      <div>
+        <input id="auth-password" type="password" placeholder="Password (min 6 chars)" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:7px 10px;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+      </div>
+    </div>
+    <div class="batch-modal-foot">
+      <button class="batch-btn-add" id="auth-submit-btn" onclick="submitAuth()">Log In</button>
+      <button class="batch-btn-cancel" onclick="closeAuthModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project Name Modal (new / rename) -->
+<div class="batch-overlay" id="project-name-modal" style="display:none;" onclick="if(event.target===this)closeProjectModal()">
+  <div class="batch-modal" style="max-width:340px;">
+    <div class="batch-modal-head">
+      <span class="batch-modal-title" id="project-modal-title">New Project</span>
+    </div>
+    <div class="batch-modal-body" style="padding:16px;">
+      <input id="project-name-input" type="text" placeholder="Project name" maxlength="80"
+        style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:7px 10px;outline:none;transition:border-color .15s;"
+        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+    </div>
+    <div class="batch-modal-foot">
+      <button class="batch-btn-add" id="project-modal-confirm" onclick="confirmProjectName()">Create</button>
+      <button class="batch-btn-cancel" onclick="closeProjectModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
